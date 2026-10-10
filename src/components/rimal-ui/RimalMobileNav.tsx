@@ -3,12 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MonitorSmartphone, Package, FileText, Settings } from 'lucide-react';
+import { Home, ShoppingCart, Package, FileText, Settings } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
   { title: 'Home', icon: Home, href: '/dashboard' },
-  { title: 'POS', icon: MonitorSmartphone, href: '/pos' },
+  { title: 'Sales', icon: ShoppingCart, href: '/sales' },
   { title: 'Products', icon: Package, href: '/products' },
   { title: 'Reports', icon: FileText, href: '/reports' },
   { title: 'Settings', icon: Settings, href: '/settings' },
