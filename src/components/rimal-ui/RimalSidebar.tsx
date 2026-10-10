@@ -68,7 +68,7 @@ export default function RimalSidebar() {
       {/* Mobile overlay backdrop */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-[60] lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[190] lg:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -76,7 +76,7 @@ export default function RimalSidebar() {
       <aside 
         ref={sidebarRef}
         className={clsx(
-          "w-[260px] h-screen bg-white flex flex-col fixed left-0 top-0 overflow-y-auto z-[70] border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.01)] transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "w-[260px] h-screen bg-white flex flex-col fixed left-0 top-0 overflow-y-auto z-[200] border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.01)] transition-transform duration-300 ease-in-out lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
