@@ -71,7 +71,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-        <RimalCard className="animate-on-load bg-gradient-to-br from-gray-900 to-black text-white">
+        <RimalCard className="animate-on-load bg-gradient-to-br from-[#33040D] to-[#5a0a1a] text-white">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-white" />
