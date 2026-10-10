@@ -370,14 +370,14 @@ export default function POSPage() {
 
   return (
     <>
-    <div ref={containerRef} className="h-[calc(100vh-80px)] flex gap-6 font-sans print:hidden">
+    <div ref={containerRef} className="h-full lg:h-[calc(100vh-80px)] flex flex-col lg:flex-row gap-4 lg:gap-6 font-sans print:hidden">
       
       {/* Left Column - Product Grid */}
-      <div className="flex-1 flex flex-col h-full animate-on-load print:hidden">
+      <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full animate-on-load print:hidden">
         
         {/* POS Header / Search */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-6">
+          <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -386,51 +386,51 @@ export default function POSPage() {
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-12 pr-4 py-4 border-0 rounded-[20px] text-[15px] bg-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
-              placeholder="Scan barcode or search by name, SKU..."
+              className="block w-full pl-12 pr-4 py-3.5 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[14px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
+              placeholder="Scan barcode or search..."
             />
-            <button className="absolute inset-y-2 right-2 px-4 bg-[#33040D]/5 text-[#33040D] rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center gap-2 font-bold text-[13px]">
-              <Scan className="w-4 h-4" /> Scan Mode
+            <button className="absolute inset-y-1.5 md:inset-y-2 right-1.5 md:right-2 px-3 md:px-4 bg-[#33040D]/5 text-[#33040D] rounded-lg md:rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center gap-1.5 md:gap-2 font-bold text-[12px] md:text-[13px]">
+              <Scan className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Scan Mode</span>
             </button>
           </div>
 
           {/* End of Day / Utilities */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
 
             <button 
               onClick={async () => {
                 await logoutUser();
-                router.push('/auth/login');
+                router.push('/admin/login');
               }}
-              className="h-[56px] px-5 rounded-[20px] bg-white text-gray-600 font-bold text-[13px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
             >
               <LogOut className="w-4 h-4" /> Logout
             </button>
             <button 
               onClick={() => setShowReturnModal(true)}
-              className="h-[56px] px-5 rounded-[20px] bg-white text-[#d63031] font-bold text-[13px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center gap-2"
+              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
             >
               <Undo className="w-4 h-4" /> Return
             </button>
             <button 
               onClick={handleEndOfDayClick}
               disabled={isGeneratingReport}
-              className="h-[56px] px-5 rounded-[20px] bg-[#33040D] text-white font-bold text-[13px] shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
+              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] hover:-translate-y-0.5 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
             >
-              {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} End of Day
+              {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} EOD
             </button>
           </div>
         </div>
 
         {/* Categories */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0">
           {categories.map(cat => (
             <button 
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[13px] font-bold transition-all shadow-sm ${
+              className={`whitespace-nowrap px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[12px] md:text-[13px] font-bold transition-all shadow-sm ${
                 activeCategory === cat 
-                  ? 'bg-[#33040D] text-white shadow-[0_8px_20px_rgba(51,4,13,0.25)]' 
+                  ? 'bg-[#33040D] text-white shadow-[0_4px_10px_rgba(51,4,13,0.25)]' 
                   : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent hover:border-gray-200'
               }`}
             >
@@ -440,41 +440,41 @@ export default function POSPage() {
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto pr-2 pb-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4">
+        <div className="flex-1 overflow-y-auto pr-1 md:pr-2 pb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
             {filteredProducts.map((product) => (
               <div 
                 key={product.id} 
                 onClick={() => handleAddToCart(product)}
-                className={`bg-white rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all cursor-pointer group border ${product.stock <= 0 ? 'opacity-60 grayscale' : 'border-transparent hover:border-gray-100'} flex flex-col`}
+                className={`bg-white rounded-2xl md:rounded-[24px] overflow-hidden shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-md md:hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all cursor-pointer group border ${product.stock <= 0 ? 'opacity-60 grayscale' : 'border-gray-100 md:border-transparent hover:border-gray-200'} flex flex-col`}
               >
-                <div className="h-40 relative overflow-hidden bg-gray-100">
+                <div className="h-32 md:h-40 relative overflow-hidden bg-gray-100">
                   <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className={`absolute top-3 right-3 backdrop-blur-sm px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm ${product.stock > 0 ? 'bg-white/90 text-gray-700' : 'bg-red-500/90 text-white'}`}>
+                  <div className={`absolute top-2 right-2 md:top-3 md:right-3 backdrop-blur-sm px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-[11px] font-bold shadow-sm ${product.stock > 0 ? 'bg-white/90 text-gray-700' : 'bg-red-500/90 text-white'}`}>
                     {product.stock > 0 ? `Stock: ${product.stock}` : 'Out of Stock'}
                   </div>
                 </div>
-                <div className="p-4 flex-1 flex flex-col justify-between">
+                <div className="p-3 md:p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[14px] font-bold text-gray-900 leading-tight mb-1 group-hover:text-[#33040D] transition-colors line-clamp-1">{product.name}</h3>
-                    <p className="text-[12px] font-medium text-gray-500">{product.variant}</p>
+                    <h3 className="text-[13px] md:text-[14px] font-bold text-gray-900 leading-tight mb-0.5 md:mb-1 group-hover:text-[#33040D] transition-colors line-clamp-1">{product.name}</h3>
+                    <p className="text-[11px] md:text-[12px] font-medium text-gray-500">{product.variant}</p>
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[16px] font-black text-[#33040D]">৳ {product.price}</span>
+                  <div className="mt-2 md:mt-3 flex items-center justify-between">
+                    <span className="text-[14px] md:text-[16px] font-black text-[#33040D]">৳ {product.price}</span>
                     <button 
                       disabled={product.stock <= 0}
-                      className="w-8 h-8 rounded-full bg-[#33040D]/5 flex items-center justify-center text-[#33040D] group-hover:bg-[#33040D] group-hover:text-white transition-colors disabled:opacity-50 disabled:group-hover:bg-[#33040D]/5 disabled:group-hover:text-[#33040D]"
+                      className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-[#33040D]/5 flex items-center justify-center text-[#33040D] group-hover:bg-[#33040D] group-hover:text-white transition-colors disabled:opacity-50 disabled:group-hover:bg-[#33040D]/5 disabled:group-hover:text-[#33040D]"
                     >
-                      <Plus className="w-4 h-4" strokeWidth={2.5} />
+                      <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
             {filteredProducts.length === 0 && (
-              <div className="col-span-full py-20 text-center text-gray-500">
+              <div className="col-span-full py-10 md:py-20 text-center text-gray-500">
                 <p className="font-bold">No products found</p>
-                <p className="text-sm mt-1">Try searching for something else or add products to inventory.</p>
+                <p className="text-sm mt-1">Try searching for something else.</p>
               </div>
             )}
           </div>
@@ -482,8 +482,8 @@ export default function POSPage() {
       </div>
 
       {/* Right Column - Cart (Receipt) */}
-      <div className="w-[420px] flex-shrink-0 flex flex-col animate-on-load print:hidden">
-        <RimalCard className="flex-1 flex flex-col !p-0 overflow-hidden" glass>
+      <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col animate-on-load print:hidden min-h-[600px] lg:min-h-0 lg:h-full mt-4 lg:mt-0 pb-10 lg:pb-0">
+        <RimalCard className="flex-1 flex flex-col !p-0 overflow-hidden border lg:border-none shadow-sm lg:shadow-[0_4px_30px_rgb(0,0,0,0.04)]" glass>
           
           {/* Cart Header */}
           <div className="p-4 border-b border-gray-100 bg-white/50 flex flex-wrap items-center justify-between gap-3">
