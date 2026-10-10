@@ -376,48 +376,48 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full animate-on-load print:hidden">
         
         {/* POS Header / Search */}
-        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
             </div>
             <input
               type="text"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-12 pr-4 py-3.5 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[14px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
+              className="block w-full pl-10 md:pl-12 pr-12 md:pr-4 py-3 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[13px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
               placeholder="Scan barcode or search..."
             />
-            <button className="absolute inset-y-1.5 md:inset-y-2 right-1.5 md:right-2 px-3 md:px-4 bg-[#33040D]/5 text-[#33040D] rounded-lg md:rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center gap-1.5 md:gap-2 font-bold text-[12px] md:text-[13px]">
-              <Scan className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Scan Mode</span>
+            <button className="absolute inset-y-1.5 md:inset-y-2 right-1.5 md:right-2 w-10 md:w-auto md:px-4 bg-[#33040D]/5 text-[#33040D] rounded-lg md:rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center justify-center gap-2 font-bold text-[13px]">
+              <Scan className="w-4 h-4" /> <span className="hidden md:inline whitespace-nowrap">Scan Mode</span>
             </button>
           </div>
 
           {/* End of Day / Utilities */}
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0">
 
             <button 
               onClick={async () => {
                 await logoutUser();
                 router.push('/admin/login');
               }}
-              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
+              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0"
             >
-              <LogOut className="w-4 h-4" /> Logout
+              <LogOut className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Logout</span>
             </button>
             <button 
               onClick={() => setShowReturnModal(true)}
-              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center gap-2 whitespace-nowrap shrink-0"
+              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center justify-center gap-2 shrink-0"
             >
-              <Undo className="w-4 h-4" /> Return
+              <Undo className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Return</span>
             </button>
             <button 
               onClick={handleEndOfDayClick}
               disabled={isGeneratingReport}
-              className="h-[48px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] hover:-translate-y-0.5 transition-all flex items-center gap-2 whitespace-nowrap shrink-0"
+              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_15px_rgba(51,4,13,0.15)] md:shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] transition-all flex items-center justify-center gap-2 shrink-0"
             >
-              {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} EOD
+              {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <FileText className="w-4 h-4 shrink-0" />} <span className="whitespace-nowrap">End of Day</span>
             </button>
           </div>
         </div>
