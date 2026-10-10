@@ -95,7 +95,7 @@ export async function loginUser(email: string, password: string) {
       return { success: false, error: 'Failed to send OTP email. Please check your SMTP settings.' };
     }
 
-    return { success: true, requireOtp: true, email: user.email };
+    return { success: true, requireOtp: true, email: user.email, role: user.role };
   } catch (error: any) {
     console.error("Login Error:", error);
     return { success: false, error: error.message || 'Something went wrong' };
