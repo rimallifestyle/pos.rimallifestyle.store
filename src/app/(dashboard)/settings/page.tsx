@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import { User, Shield, Bell, Building, CheckCircle2, Camera, Loader2, ShoppingCart } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getUserProfile, updateUserProfile } from '@/actions/user';
+import { getUserProfile, updateUserProfile, requestProfilePasswordChange, verifyProfilePasswordChange } from '@/actions/user';
 import { uploadImageToCloudinary } from '@/actions/upload';
 import { getPosSettings, updatePosSettings } from '@/actions/settings';
 import { Plus, Trash2 } from 'lucide-react';
@@ -18,6 +18,49 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  const [securityStep, setSecurityStep] = useState<'request' | 'verify'>('request');
+  const [securityData, setSecurityData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    otp: ''
+  });
+
+  const handlePasswordChangeRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    if (securityData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setIsSaving(true);
+    const res = await requestProfilePasswordChange(securityData.currentPassword);
+    if (res.success) {
+      toast.success('OTP sent to your email');
+      setSecurityStep('verify');
+    } else {
+      toast.error(res.error || 'Verification failed');
+    }
+    setIsSaving(false);
+  };
+
+  const handlePasswordChangeVerify = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const res = await verifyProfilePasswordChange(securityData.otp, securityData.newPassword);
+    if (res.success) {
+      toast.success('Password changed successfully!');
+      setSecurityStep('request');
+      setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' });
+    } else {
+      toast.error(res.error || 'Failed to change password');
+    }
+    setIsSaving(false);
+  };
   
   const [profile, setProfile] = useState({
     firstName: '',
@@ -256,7 +299,60 @@ export default function SettingsPage() {
             </form>
           )}
 
-          {['Security', 'Notifications', 'Company'].includes(activeTab) && (
+          {activeTab === 'Security' && (
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
+              <div className="p-8 border-b border-gray-100 bg-gray-50/30">
+                <h2 className="text-[18px] font-bold text-gray-900 mb-1">Change Password</h2>
+                <p className="text-[13px] text-gray-500 font-medium">Update your password to keep your account secure.</p>
+              </div>
+              
+              <div className="p-8">
+                {securityStep === 'request' ? (
+                  <form onSubmit={handlePasswordChangeRequest} className="space-y-6 max-w-md">
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-gray-700">Current Password</label>
+                      <input required name="currentPassword" type="password" value={securityData.currentPassword} onChange={e => setSecurityData({...securityData, currentPassword: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#33040D] focus:ring-4 focus:ring-[#33040D]/10 text-[14px] font-medium text-gray-900 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-gray-700">New Password</label>
+                      <input required name="newPassword" type="password" value={securityData.newPassword} onChange={e => setSecurityData({...securityData, newPassword: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#33040D] focus:ring-4 focus:ring-[#33040D]/10 text-[14px] font-medium text-gray-900 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-gray-700">Confirm New Password</label>
+                      <input required name="confirmPassword" type="password" value={securityData.confirmPassword} onChange={e => setSecurityData({...securityData, confirmPassword: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#33040D] focus:ring-4 focus:ring-[#33040D]/10 text-[14px] font-medium text-gray-900 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
+                    </div>
+                    
+                    <button disabled={isSaving} type="submit" className="px-6 py-2.5 bg-[#33040D] text-white rounded-lg text-[13px] font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2 w-full justify-center disabled:opacity-70 disabled:hover:translate-y-0">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />} 
+                      {isSaving ? 'Processing...' : 'Request Password Change'}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handlePasswordChangeVerify} className="space-y-6 max-w-md animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 text-[13px] font-medium mb-4">
+                      An OTP has been sent to your email. Please enter it below to confirm your password change.
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-gray-700">Enter OTP</label>
+                      <input required name="otp" type="text" maxLength={6} value={securityData.otp} onChange={e => setSecurityData({...securityData, otp: e.target.value})} placeholder="••••••" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#33040D] focus:ring-4 focus:ring-[#33040D]/10 text-[20px] tracking-[0.5em] font-bold text-gray-900 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => setSecurityStep('request')} className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-[13px] font-bold transition-all flex-1">
+                        Cancel
+                      </button>
+                      <button disabled={isSaving} type="submit" className="px-6 py-2.5 bg-[#33040D] text-white rounded-lg text-[13px] font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 flex-1 justify-center disabled:opacity-70">
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} 
+                        {isSaving ? 'Verifying...' : 'Verify & Change'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
+
+          {['Notifications', 'Company'].includes(activeTab) && (
             <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <h3 className="text-gray-900 font-bold text-lg mb-2">Coming Soon</h3>
               <p className="text-gray-500 text-[14px]">The {activeTab} settings panel is currently under development.</p>
