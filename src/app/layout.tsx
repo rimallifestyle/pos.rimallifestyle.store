@@ -7,9 +7,25 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#33040D",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "Rimal | Clothing Management System",
   description: "Clothing Warehouse + Multi-Outlet POS Management System for Rimal.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Rimal POS",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 import ToastProvider from "@/components/providers/ToastProvider";
