@@ -68,15 +68,25 @@ export default function RimalTopBar({ title, subtitle, emoji, showSearch = true,
   const displayAvatar = session?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=33040D&color=fff&bold=true`;
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 animate-on-load relative z-[100]">
-      <div>
-        <p className="text-[13px] text-gray-500 font-medium mb-1.5 tracking-wide">{subtitle}</p>
-        <h1 className="text-[34px] font-extrabold text-gray-900 tracking-tight flex items-center gap-2 leading-none">
-          {title} {emoji && <span className="text-[28px]">{emoji}</span>}
-        </h1>
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 lg:mb-12 animate-on-load relative z-[100]">
+      <div className="flex items-center gap-4">
+        {/* Mobile menu toggle button */}
+        <button 
+          onClick={() => document.dispatchEvent(new Event('toggle-mobile-menu'))}
+          className="lg:hidden w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 hover:text-[#33040D] transition-colors shadow-sm shrink-0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        
+        <div>
+          <p className="text-[12px] md:text-[13px] text-gray-500 font-medium mb-1 md:mb-1.5 tracking-wide">{subtitle}</p>
+          <h1 className="text-[24px] md:text-[34px] font-extrabold text-gray-900 tracking-tight flex items-center gap-2 leading-none">
+            {title} {emoji && <span className="text-[22px] md:text-[28px]">{emoji}</span>}
+          </h1>
+        </div>
       </div>
       
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
         {actionButtons && (
           <div className="flex items-center gap-3 mr-2">
             {actionButtons}

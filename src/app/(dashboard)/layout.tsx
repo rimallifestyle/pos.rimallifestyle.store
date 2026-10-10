@@ -7,16 +7,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#F4F6FA] font-sans print:bg-white print:min-h-0">
+    <div className="flex min-h-screen bg-[#F4F6FA] font-sans print:bg-white print:min-h-0 overflow-x-hidden">
       {/* Sidebar fixed on the left */}
       <div className="print:hidden">
         <RimalSidebar />
       </div>
       
-      {/* Main content area pushed to the right by sidebar width (w-[260px]) */}
-      <div className="flex-1 ml-[260px] print:ml-0">
+      {/* Main content area pushed to the right by sidebar width on desktop */}
+      <div className="flex-1 lg:ml-[260px] print:ml-0 w-full transition-all duration-300">
         {/* Main content area using native window scroll */}
-        <main className="px-10 py-10 lg:px-14 print:px-0 print:py-0">
+        <main className="px-5 py-6 lg:px-10 lg:py-10 print:px-0 print:py-0 w-full max-w-[100vw]">
           {children}
         </main>
       </div>

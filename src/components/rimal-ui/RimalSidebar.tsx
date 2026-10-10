@@ -41,6 +41,7 @@ export default function RimalSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef<HTMLElement>(null);
+  const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   const handleLogout = async () => {
     await logoutUser();
@@ -48,16 +49,37 @@ export default function RimalSidebar() {
   };
 
   useEffect(() => {
-    if (sidebarRef.current) {
+    // Close mobile menu on route change
+    setIsMobileOpen(false);
+    
+    if (sidebarRef.current && window.innerWidth >= 1024) {
       gsap.fromTo(sidebarRef.current, { x: -20, opacity: 0 }, { x: 0, opacity: 1, duration: 0.8, ease: 'expo.out' });
     }
   }, [pathname]);
 
+  useEffect(() => {
+    const toggleMenu = () => setIsMobileOpen(prev => !prev);
+    document.addEventListener('toggle-mobile-menu', toggleMenu);
+    return () => document.removeEventListener('toggle-mobile-menu', toggleMenu);
+  }, []);
+
   return (
-    <aside 
-      ref={sidebarRef}
-      className="w-[260px] h-screen bg-white flex flex-col fixed left-0 top-0 overflow-y-auto z-50 border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.01)]"
-    >
+    <>
+      {/* Mobile overlay backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[60] lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+      
+      <aside 
+        ref={sidebarRef}
+        className={clsx(
+          "w-[260px] h-screen bg-white flex flex-col fixed left-0 top-0 overflow-y-auto z-[70] border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.01)] transition-transform duration-300 ease-in-out lg:translate-x-0",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
       <div className="pt-8 pb-10 px-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-[12px] overflow-hidden shadow-md shadow-[#33040D]/20 shrink-0">
           <Image src="/logo.jpg" alt="Rimal Logo" width={40} height={40} className="w-full h-full object-cover" />
@@ -135,5 +157,6 @@ export default function RimalSidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }
