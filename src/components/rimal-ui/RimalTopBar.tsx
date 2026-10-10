@@ -68,7 +68,7 @@ export default function RimalTopBar({ title, subtitle, emoji, showSearch = true,
   const displayAvatar = session?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=33040D&color=fff&bold=true`;
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 animate-on-load">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 animate-on-load relative z-[100]">
       <div>
         <p className="text-[13px] text-gray-500 font-medium mb-1.5 tracking-wide">{subtitle}</p>
         <h1 className="text-[34px] font-extrabold text-gray-900 tracking-tight flex items-center gap-2 leading-none">
