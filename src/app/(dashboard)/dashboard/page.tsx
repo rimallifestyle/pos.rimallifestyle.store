@@ -52,38 +52,46 @@ export default function DashboardPage() {
       />
 
       {/* Mini Stats (Top Row) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-8">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[#33040D]/5 text-[#33040D] mb-4">
-            <Banknote className="w-6 h-6" strokeWidth={2.5} />
-          </div>
-          <p className="text-[14px] font-bold text-gray-900 mb-1">Today's Sales</p>
-          <h3 className="text-[13px] font-medium text-gray-500">৳ 0</h3>
-        </RimalCard>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+        <Link href="/sales" className="block">
+          <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-6 sm:py-8 h-full transition-all">
+            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-full flex items-center justify-center bg-[#33040D]/5 text-[#33040D] mb-3 sm:mb-4">
+              <Banknote className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
+            </div>
+            <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Today's Sales</p>
+            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">৳ 0</h3>
+          </RimalCard>
+        </Link>
         
-        <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-8">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[#33040D]/5 text-[#33040D] mb-4">
-            <ShoppingCart className="w-6 h-6" strokeWidth={2.5} />
-          </div>
-          <p className="text-[14px] font-bold text-gray-900 mb-1">Today's Orders</p>
-          <h3 className="text-[13px] font-medium text-gray-500">0</h3>
-        </RimalCard>
+        <Link href="/sales" className="block">
+          <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-6 sm:py-8 h-full transition-all">
+            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-full flex items-center justify-center bg-[#33040D]/5 text-[#33040D] mb-3 sm:mb-4">
+              <ShoppingCart className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
+            </div>
+            <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Today's Orders</p>
+            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">0</h3>
+          </RimalCard>
+        </Link>
         
-        <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-8">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-red-50 text-red-500 mb-4">
-            <AlertTriangle className="w-6 h-6" strokeWidth={2.5} />
-          </div>
-          <p className="text-[14px] font-bold text-gray-900 mb-1">Low Stock Alerts</p>
-          <h3 className="text-[13px] font-medium text-gray-500">{isLoading ? '...' : dynStats.lowStockCount} Products</h3>
-        </RimalCard>
+        <Link href="/products" className="block">
+          <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-6 sm:py-8 h-full transition-all">
+            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-full flex items-center justify-center bg-red-50 text-red-500 mb-3 sm:mb-4">
+              <AlertTriangle className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
+            </div>
+            <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Low Stock Alerts</p>
+            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">{isLoading ? '...' : dynStats.lowStockCount} Products</h3>
+          </RimalCard>
+        </Link>
         
-        <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-8">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 mb-4">
-            <ArrowRightLeft className="w-6 h-6" strokeWidth={2.5} />
-          </div>
-          <p className="text-[14px] font-bold text-gray-900 mb-1">Pending Transfers</p>
-          <h3 className="text-[13px] font-medium text-gray-500">0</h3>
-        </RimalCard>
+        <Link href="/inventory" className="block">
+          <RimalCard className="animate-on-load hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] cursor-pointer flex flex-col items-center justify-center text-center py-6 sm:py-8 h-full transition-all">
+            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 mb-3 sm:mb-4">
+              <ArrowRightLeft className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
+            </div>
+            <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Pending Transfers</p>
+            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">0</h3>
+          </RimalCard>
+        </Link>
       </div>
 
       {/* Main Content Area */}
@@ -214,30 +222,33 @@ export default function DashboardPage() {
               <h2 className="text-[20px] font-bold text-gray-900">Quick Tasks</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Link href="/products/add" className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all cursor-pointer text-center group block">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/5 transition-colors">
+              <Link href="/products/add" className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all cursor-pointer text-center group block">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/10 transition-colors">
                   <Plus className="w-5 h-5 text-gray-600 group-hover:text-[#33040D]" />
                 </div>
-                <p className="text-[13px] font-bold text-gray-900">Add Product</p>
+                <p className="text-[13px] font-bold text-gray-900 group-hover:text-[#33040D] transition-colors">Add Product</p>
               </Link>
-              <div className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all cursor-pointer text-center group">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/5 transition-colors">
+              
+              <Link href="/inventory" className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all cursor-pointer text-center group block">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/10 transition-colors">
                   <ArrowRightLeft className="w-5 h-5 text-gray-600 group-hover:text-[#33040D]" />
                 </div>
-                <p className="text-[13px] font-bold text-gray-900">Transfer</p>
-              </div>
-              <div className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all cursor-pointer text-center group">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/5 transition-colors">
+                <p className="text-[13px] font-bold text-gray-900 group-hover:text-[#33040D] transition-colors">Stock Transfer</p>
+              </Link>
+              
+              <Link href="/pos" className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all cursor-pointer text-center group block">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/10 transition-colors">
                   <CreditCard className="w-5 h-5 text-gray-600 group-hover:text-[#33040D]" />
                 </div>
-                <p className="text-[13px] font-bold text-gray-900">New Sale</p>
-              </div>
-              <div className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all cursor-pointer text-center group">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/5 transition-colors">
+                <p className="text-[13px] font-bold text-gray-900 group-hover:text-[#33040D] transition-colors">Open POS</p>
+              </Link>
+              
+              <Link href="/reports" className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all cursor-pointer text-center group block">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#33040D]/10 transition-colors">
                   <Download className="w-5 h-5 text-gray-600 group-hover:text-[#33040D]" />
                 </div>
-                <p className="text-[13px] font-bold text-gray-900">Reports</p>
-              </div>
+                <p className="text-[13px] font-bold text-gray-900 group-hover:text-[#33040D] transition-colors">Reports & BI</p>
+              </Link>
             </div>
           </div>
 

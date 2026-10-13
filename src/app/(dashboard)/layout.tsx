@@ -15,7 +15,7 @@ export default function DashboardLayout({
       </div>
       
       {/* Main content area pushed to the right by sidebar width on desktop */}
-      <div className="flex-1 lg:ml-[260px] print:ml-0 w-full transition-all duration-300 pb-20 lg:pb-0">
+      <div className="flex-1 lg:ml-[270px] print:ml-0 w-full transition-all duration-300 pb-20 lg:pb-0">
         {/* Main content area using native window scroll */}
         <main className="px-5 py-6 lg:px-10 lg:py-10 print:px-0 print:py-0 w-full max-w-[100vw]">
           {children}
