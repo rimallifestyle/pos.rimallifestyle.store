@@ -8,6 +8,7 @@ import Outlet from '@/models/Outlet';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 import { getCurrentSession } from './auth';
+import { sendSalePushNotification } from '@/lib/onesignal';
 
 export async function getPosContext() {
   try {
@@ -120,6 +121,25 @@ export async function saveSale(data: any) {
       paymentProvider: data.paymentProvider,
       status: 'COMPLETED'
     });
+
+    // Trigger OneSignal push notification to all subscribed devices
+    try {
+      let outletName = 'Main Outlet';
+      if (user?.outletId) {
+        const outlet = await Outlet.findById(user.outletId).lean();
+        if (outlet) outletName = (outlet as any).name;
+      }
+
+      sendSalePushNotification({
+        invoiceId,
+        total: data.total,
+        itemsCount: data.items.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0),
+        customerName: data.customerName,
+        outletName
+      }).catch(err => console.error('[OneSignal] Sale push notification error:', err));
+    } catch (pushErr) {
+      console.error('[OneSignal] Failed preparing push notification:', pushErr);
+    }
     
     return { success: true, invoiceId };
   } catch (error) {

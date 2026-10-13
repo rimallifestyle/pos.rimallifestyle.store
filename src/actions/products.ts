@@ -3,6 +3,7 @@
 import connectToDatabase from '@/lib/rimal-db';
 import Product from '@/models/Product';
 import Inventory from '@/models/Inventory';
+import { sendProductAddedPushNotification, sendProductDeletedPushNotification } from '@/lib/onesignal';
 
 export async function searchProducts(query: string) {
   try {
@@ -137,6 +138,17 @@ export async function createProductWithVariants(data: any) {
       await Inventory.insertMany(inventoryOps);
     }
 
+    // Trigger OneSignal push notification for Product Add
+    try {
+      sendProductAddedPushNotification({
+        productTitle: data.title,
+        variantCount: data.variants?.length || 1,
+        category: data.category
+      }).catch(err => console.error('[OneSignal] Product added push error:', err));
+    } catch (pushErr) {
+      console.error('[OneSignal] Failed preparing product added push:', pushErr);
+    }
+
     return { success: true, product: JSON.parse(JSON.stringify(newProduct)) };
   } catch (error: any) {
     console.error('Failed to create product:', error);
@@ -212,11 +224,22 @@ export async function deleteProduct(id: string) {
     const product = await Product.findById(id);
     if (!product) return { success: false, error: 'Product not found' };
     
+    const productTitle = (product as any).title || 'Product';
+
     // Delete product
     await Product.findByIdAndDelete(id);
     
     // Delete related inventory
     await Inventory.deleteMany({ productId: id });
+
+    // Trigger OneSignal push notification for Product Delete
+    try {
+      sendProductDeletedPushNotification({
+        productTitle
+      }).catch(err => console.error('[OneSignal] Product deleted push error:', err));
+    } catch (pushErr) {
+      console.error('[OneSignal] Failed preparing product deleted push:', pushErr);
+    }
     
     return { success: true };
   } catch (error: any) {

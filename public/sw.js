@@ -1,4 +1,10 @@
-// Rimal POS Service Worker
+// Rimal POS Service Worker with OneSignal Push Support
+try {
+  importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+} catch (e) {
+  // Offline or OneSignal skipped
+}
+
 const CACHE_NAME = 'rimal-pos-cache-v1';
 
 self.addEventListener('install', (event) => {
@@ -21,3 +27,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+

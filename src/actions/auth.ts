@@ -5,7 +5,9 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/rimal-db';
 import User from '@/models/User';
+import Outlet from '@/models/Outlet';
 import { sendEmail } from '@/services/email';
+import { sendPosLoginPushNotification } from '@/lib/onesignal';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'rimal-super-secret-key-change-in-prod';
 const key = new TextEncoder().encode(SECRET_KEY);
@@ -191,6 +193,22 @@ export async function loginWithPin(phone: string, pin: string) {
       path: '/',
       maxAge: 60 * 60 * 24, // 24 hours
     });
+
+    // Trigger OneSignal push notification for POS Login
+    try {
+      let outletName = 'Main Outlet';
+      if (user.outletId) {
+        const outlet = await Outlet.findById(user.outletId).lean();
+        if (outlet) outletName = (outlet as any).name;
+      }
+      sendPosLoginPushNotification({
+        userName: user.name || 'Staff',
+        userRole: user.role || 'Cashier',
+        outletName
+      }).catch(err => console.error('[OneSignal] POS login push error:', err));
+    } catch (pushErr) {
+      console.error('[OneSignal] Failed preparing POS login push:', pushErr);
+    }
 
     return { success: true, role: user.role, outletId: user.outletId };
   } catch (error: any) {

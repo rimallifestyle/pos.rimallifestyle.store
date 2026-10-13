@@ -42,6 +42,7 @@ export const metadata: Metadata = {
 
 import ToastProvider from "@/components/providers/ToastProvider";
 import ServiceWorkerRegister from "@/components/providers/ServiceWorkerRegister";
+import OneSignalProvider from "@/components/providers/OneSignalProvider";
 
 export default function RootLayout({
   children,
@@ -85,6 +86,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-[var(--color-brand-background)] text-[var(--color-text-main)]">
         <ServiceWorkerRegister />
+        <OneSignalProvider />
         <ToastProvider />
         {children}
       </body>

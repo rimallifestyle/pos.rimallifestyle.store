@@ -3,11 +3,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
-import { User, Shield, Bell, Building, CheckCircle2, Camera, Loader2, ShoppingCart } from 'lucide-react';
+import { User, Shield, Bell, Building, CheckCircle2, Camera, Loader2, ShoppingCart, Smartphone, Laptop, Send, BellRing, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getUserProfile, updateUserProfile, requestProfilePasswordChange, verifyProfilePasswordChange } from '@/actions/user';
 import { uploadImageToCloudinary } from '@/actions/upload';
 import { getPosSettings, updatePosSettings } from '@/actions/settings';
+import { triggerTestPushNotification, getNotificationConfigStatus } from '@/actions/notifications';
 import { Plus, Trash2 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -26,6 +27,46 @@ export default function SettingsPage() {
     confirmPassword: '',
     otp: ''
   });
+
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [notifConfig, setNotifConfig] = useState<{ isConfigured: boolean; appId: string | null }>({ isConfigured: false, appId: null });
+  const [devicePermission, setDevicePermission] = useState<string>('default');
+
+  useEffect(() => {
+    getNotificationConfigStatus().then(res => setNotifConfig(res));
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setDevicePermission(Notification.permission);
+    }
+  }, []);
+
+  const handleSendTestPush = async () => {
+    setIsSendingTest(true);
+    const res = await triggerTestPushNotification();
+    setIsSendingTest(false);
+    if (res.success) {
+      toast.success(res.message || 'Test push notification sent!');
+    } else {
+      toast.error(res.error || 'Failed to send test push notification');
+    }
+  };
+
+  const handleRequestDevicePermission = async () => {
+    if (typeof window !== 'undefined' && window.__rimalSubscribeNotifications) {
+      await window.__rimalSubscribeNotifications();
+      if ('Notification' in window) {
+        setDevicePermission(Notification.permission);
+        if (Notification.permission === 'granted') {
+          toast.success('Push notification permission granted!');
+        }
+      }
+    } else if (typeof window !== 'undefined' && 'Notification' in window) {
+      const res = await Notification.requestPermission();
+      setDevicePermission(res);
+      if (res === 'granted') {
+        toast.success('Push notification permission granted!');
+      }
+    }
+  };
 
   const handlePasswordChangeRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -352,10 +393,150 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {['Notifications', 'Company'].includes(activeTab) && (
+          {activeTab === 'Notifications' && (
+            <div className="space-y-6">
+              {/* Header Box */}
+              <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
+                <div className="p-6 sm:p-8 border-b border-gray-100 bg-gray-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-8 h-8 rounded-lg bg-[#33040D]/10 text-[#33040D] flex items-center justify-center font-bold">
+                        <BellRing className="w-4 h-4" />
+                      </div>
+                      <h2 className="text-[18px] font-extrabold text-gray-900">OneSignal Push Notifications</h2>
+                    </div>
+                    <p className="text-[13px] text-gray-500 font-medium">
+                      Real-time push alerts across Desktop, Android, and iOS PWA apps.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleSendTestPush}
+                      disabled={isSendingTest}
+                      className="px-4 py-2.5 bg-white border border-gray-200 hover:border-[#33040D] text-gray-700 hover:text-[#33040D] rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isSendingTest ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {isSendingTest ? 'Sending Test...' : 'Send Test Push'}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={handleRequestDevicePermission}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+                        devicePermission === 'granted'
+                          ? 'bg-green-50 text-green-700 border border-green-200'
+                          : 'bg-[#33040D] text-white hover:bg-[#4a0614]'
+                      }`}
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      {devicePermission === 'granted' ? 'Device Subscribed ✓' : 'Subscribe This Device'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status Banners */}
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* Setup Status Bar */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Service Backend Status</p>
+                        <p className="text-sm font-black text-gray-900 mt-0.5">
+                          {notifConfig.isConfigured ? 'Connected to OneSignal' : 'Config Pending (.env)'}
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        notifConfig.isConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {notifConfig.isConfigured ? 'Active' : 'Setup Required'}
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/70 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">This Device Status</p>
+                        <p className="text-sm font-black text-gray-900 mt-0.5">
+                          {devicePermission === 'granted' ? 'Push Permission Granted' : devicePermission === 'denied' ? 'Permission Denied in Browser' : 'Not Subscribed Yet'}
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        devicePermission === 'granted' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-700'
+                      }`}>
+                        {devicePermission}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Active Notification Event Triggers */}
+                  <div>
+                    <h3 className="text-[15px] font-extrabold text-gray-900 mb-3">Live Notification Events</h3>
+                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+                      <div className="p-4 bg-white flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">🛍️</span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-gray-900">Sale Completed Alert</h4>
+                            <p className="text-[12px] text-gray-500 font-medium">Triggers whenever an order or checkout is finalized at any POS terminal.</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100">Enabled</span>
+                      </div>
+
+                      <div className="p-4 bg-white flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">🔐</span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-gray-900">POS Login Alert</h4>
+                            <p className="text-[12px] text-gray-500 font-medium">Notifies administrators when a cashier or manager enters their PIN and logs in.</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100">Enabled</span>
+                      </div>
+
+                      <div className="p-4 bg-white flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">📦</span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-gray-900">Product Added Alert</h4>
+                            <p className="text-[12px] text-gray-500 font-medium">Sends an alert whenever a new product with size/color variants is created.</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100">Enabled</span>
+                      </div>
+
+                      <div className="p-4 bg-white flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">🗑️</span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-gray-900">Product Deleted Alert</h4>
+                            <p className="text-[12px] text-gray-500 font-medium">Instantly notifies when an existing product and inventory are deleted.</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100">Enabled</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Device Platforms */}
+                  <div className="p-5 rounded-xl bg-gray-50/60 border border-gray-100">
+                    <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Supported Platforms</h4>
+                    <div className="flex flex-wrap gap-4 text-xs font-semibold text-gray-600">
+                      <span className="flex items-center gap-1.5"><Laptop className="w-3.5 h-3.5 text-[#33040D]" /> Desktop (Chrome, Safari, Edge)</span>
+                      <span className="flex items-center gap-1.5"><Smartphone className="w-3.5 h-3.5 text-[#33040D]" /> Android (Chrome & Installed App)</span>
+                      <span className="flex items-center gap-1.5"><Smartphone className="w-3.5 h-3.5 text-[#33040D]" /> iOS (iPhone Safari Add-to-Home PWA)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Company' && (
             <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <h3 className="text-gray-900 font-bold text-lg mb-2">Coming Soon</h3>
-              <p className="text-gray-500 text-[14px]">The {activeTab} settings panel is currently under development.</p>
+              <p className="text-gray-500 text-[14px]">The Company settings panel is currently under development.</p>
             </div>
           )}
           </>

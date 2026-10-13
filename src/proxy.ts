@@ -14,6 +14,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname === '/manifest.json' ||
     pathname === '/sw.js' ||
+    pathname === '/OneSignalSDKWorker.js' ||
     pathname.startsWith('/icon') ||
     pathname.startsWith('/logo') ||
     pathname.startsWith('/apple-') ||

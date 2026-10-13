@@ -1,0 +1,169 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Script from 'next/script';
+import { Bell, X, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+
+declare global {
+  interface Window {
+    OneSignalDeferred?: any[];
+    OneSignal?: any;
+    __rimalSubscribeNotifications?: () => Promise<void>;
+  }
+}
+
+export default function OneSignalProvider() {
+  const [permission, setPermission] = useState<NotificationPermission | 'unknown'>('unknown');
+  const [isPromptDismissed, setIsPromptDismissed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+
+  useEffect(() => {
+    // Check if dismissed in this session
+    const dismissed = sessionStorage.getItem('rimal_push_prompt_dismissed');
+    if (dismissed === 'true') {
+      setIsPromptDismissed(true);
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission);
+    }
+  }, []);
+
+  const handleInitOneSignal = () => {
+    if (!appId || typeof window === 'undefined') return;
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal: any) {
+      try {
+        await OneSignal.init({
+          appId: appId,
+          notifyButton: {
+            enable: false, // Using our own custom UI
+          },
+          allowLocalhostAsSecureOrigin: true,
+        });
+
+        setIsInitialized(true);
+
+        // Update permission state
+        if (OneSignal.Notifications) {
+          const isEnabled = OneSignal.Notifications.permission;
+          if (isEnabled) {
+            setPermission(Notification.permission);
+          }
+
+          OneSignal.Notifications.addEventListener('permissionChange', (permissionChange: boolean) => {
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+              setPermission(Notification.permission);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('[OneSignal] Initialization notice:', err);
+      }
+    });
+
+    // Provide global helper function for settings button
+    window.__rimalSubscribeNotifications = async () => {
+      if (window.OneSignal && window.OneSignal.Notifications) {
+        await window.OneSignal.Notifications.requestPermission();
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          setPermission(Notification.permission);
+        }
+      } else if (typeof window !== 'undefined' && 'Notification' in window) {
+        const res = await Notification.requestPermission();
+        setPermission(res);
+      }
+    };
+  };
+
+  const handleEnableNotifications = async () => {
+    setIsSubscribing(true);
+    try {
+      if (window.OneSignal && window.OneSignal.Notifications) {
+        await window.OneSignal.Notifications.requestPermission();
+      } else if (typeof window !== 'undefined' && 'Notification' in window) {
+        await Notification.requestPermission();
+      }
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setPermission(Notification.permission);
+      }
+    } catch (err) {
+      console.error('[OneSignal] Request permission failed:', err);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const handleDismiss = () => {
+    setIsPromptDismissed(true);
+    sessionStorage.setItem('rimal_push_prompt_dismissed', 'true');
+  };
+
+  // Do not show banner if already granted, denied, or dismissed
+  const showBanner = appId && permission !== 'granted' && !isPromptDismissed;
+
+  return (
+    <>
+      {/* OneSignal Web SDK v16 */}
+      {appId && (
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+          onLoad={handleInitOneSignal}
+        />
+      )}
+
+      {/* Modern Slide-Up Push Notification Opt-In Banner */}
+      {showBanner && (
+        <div className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[180] max-w-[360px] w-[calc(100vw-32px)] animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-[#33040D] text-white rounded-2xl p-4.5 shadow-[0_12px_40px_rgba(51,4,13,0.35)] border border-white/10 relative overflow-hidden backdrop-blur-md">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+
+            <button 
+              onClick={handleDismiss}
+              className="absolute top-3 right-3 text-white/60 hover:text-white transition-colors p-1"
+              aria-label="Dismiss notification banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-start gap-3 mr-4">
+              <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-white mt-0.5 border border-white/10">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-[13px] font-extrabold text-white leading-tight">Enable Push Alerts</h4>
+                <p className="text-[11px] text-white/80 font-medium mt-1 leading-snug">
+                  Get real-time push alerts on mobile & desktop when sales are made, POS logins occur, or products change.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-3.5 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="flex-1 py-2 text-[11px] font-bold text-white/70 hover:text-white transition-colors text-center"
+              >
+                Later
+              </button>
+              <button
+                type="button"
+                onClick={handleEnableNotifications}
+                disabled={isSubscribing}
+                className="flex-1 py-2 bg-white text-[#33040D] rounded-xl text-[11px] font-black shadow-md hover:bg-gray-100 transition-all text-center flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-70"
+              >
+                <Bell className="w-3 h-3" />
+                {isSubscribing ? 'Enabling...' : 'Enable Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
