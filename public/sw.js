@@ -10,6 +10,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
+    return;
+  }
+
   // Network-first pass-through for real-time POS data, satisfies Chrome PWA install requirement
   event.respondWith(
     fetch(event.request).catch(() => {

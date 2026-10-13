@@ -65,6 +65,23 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2" />
         <link rel="manifest" href="/manifest.json" />
+
+        {/* Instant Service Worker Registration for Android Chrome PWA */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                if (document.readyState === 'complete') {
+                  navigator.serviceWorker.register('/sw.js');
+                } else {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js');
+                  });
+                }
+              }
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-[var(--color-brand-background)] text-[var(--color-text-main)]">
         <ServiceWorkerRegister />
