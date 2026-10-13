@@ -8,8 +8,19 @@ const key = new TextEncoder().encode(SECRET_KEY);
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Public paths that do not require auth
-  if (pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/icon.jpg' || pathname === '/logo.jpg') {
+  // Public paths and static assets that do not require auth (PWA manifest, service worker, icons, images)
+  const isPublicAsset = 
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname.startsWith('/icon') ||
+    pathname.startsWith('/logo') ||
+    pathname.startsWith('/apple-') ||
+    pathname === '/favicon.ico' ||
+    /\.(png|jpg|jpeg|svg|webp|ico|json|js)$/i.test(pathname);
+
+  if (isPublicAsset) {
     return NextResponse.next();
   }
 
@@ -63,6 +74,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|icon.jpg|logo.jpg).*)',
+    '/((?!api|_next/static|_next/image|manifest.json|sw.js|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|json|js)$).*)',
   ],
 };
