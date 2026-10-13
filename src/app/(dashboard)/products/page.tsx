@@ -67,23 +67,24 @@ export default function ProductsPage() {
         emoji="📦" 
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 animate-on-load">
-        <div className="flex gap-3">
-          <button className="px-5 py-2.5 bg-white border border-gray-200 rounded-full text-[13px] font-semibold text-gray-700 hover:border-gray-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] transition-all flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8 animate-on-load">
+        <div className="flex gap-2 sm:gap-3">
+          <button className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-white border border-gray-200 rounded-full text-[13px] font-semibold text-gray-700 hover:border-gray-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] transition-all flex items-center gap-2">
             <Filter className="w-4 h-4" /> Filter
           </button>
-          <button className="px-5 py-2.5 bg-white border border-gray-200 rounded-full text-[13px] font-semibold text-gray-700 hover:border-gray-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] transition-all flex items-center gap-2">
+          <button className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-white border border-gray-200 rounded-full text-[13px] font-semibold text-gray-700 hover:border-gray-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] transition-all flex items-center gap-2">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>
         
-        <Link href="/products/add" className="px-6 py-2.5 bg-[#33040D] text-white rounded-full text-[13px] font-bold shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center gap-2">
+        <Link href="/products/add" className="w-full sm:w-auto justify-center px-6 py-2.5 bg-[#33040D] text-white rounded-full text-[13px] font-bold shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Product
         </Link>
       </div>
 
-      <RimalCard className="animate-on-load !p-0" glass>
-        <div className="overflow-x-auto">
+      <RimalCard className="animate-on-load !p-0 overflow-hidden" glass>
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
@@ -163,15 +164,89 @@ export default function ProductsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Product Card List View */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {isLoading ? (
+            <div className="py-16 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#33040D] mx-auto mb-3" />
+              <p className="text-gray-500 font-medium text-sm">Loading products...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-16 px-4 text-center">
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium text-base">No products found</p>
+              <Link href="/products/add" className="inline-block mt-3 text-[#33040D] font-bold text-sm hover:underline">
+                Add your first product
+              </Link>
+            </div>
+          ) : (
+            products.map((product, idx) => (
+              <div key={idx} className="p-4 flex flex-col gap-3 hover:bg-gray-50/50 transition-colors">
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200/60 shrink-0">
+                    <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-sm font-bold text-gray-900 leading-snug line-clamp-1">{product.name}</h3>
+                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        product.status === 'Draft' ? 'bg-gray-100 text-gray-600 border border-gray-200' :
+                        product.status === 'In Stock' ? 'bg-green-50 text-green-600 border border-green-100' :
+                        product.status === 'Low Stock' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                        'bg-red-50 text-red-600 border border-red-100'
+                      }`}>
+                        {product.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[11px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{product.sku}</span>
+                      <span className="text-[11px] text-gray-500 font-medium">{product.category}</span>
+                      <span className="text-[11px] text-gray-400">•</span>
+                      <span className="text-[11px] text-gray-500 font-medium">{product.variantCount} vars</span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+                      <div>
+                        <span className="text-sm font-black text-gray-900">{product.price}</span>
+                        <span className="text-[11px] text-gray-500 font-medium ml-2">Stock: <strong className="text-gray-800">{product.stock}</strong> pcs</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <Link 
+                          href={`/products/edit/${product.id}`} 
+                          className="px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-1 text-[11px] font-bold text-gray-700 hover:text-[#33040D] hover:border-[#33040D] transition-colors"
+                        >
+                          <Edit className="w-3 h-3" /> Edit
+                        </Link>
+                        <button 
+                          onClick={() => {
+                            setProductToDelete({ id: product.id, name: product.name });
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-500 transition-colors"
+                          aria-label="Delete product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
         
         {/* Pagination Footer */}
-        <div className="border-t border-gray-100 px-6 py-5 flex items-center justify-between">
-          <p className="text-[13px] text-gray-500 font-medium">Showing {products.length} products</p>
+        <div className="border-t border-gray-100 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12px] sm:text-[13px] text-gray-500 font-medium">Showing {products.length} products</p>
           <div className="flex items-center gap-1.5">
             <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm">&lt;</button>
-            <button className="w-8 h-8 rounded-full bg-[#33040D] text-white font-bold flex items-center justify-center shadow-md">1</button>
-            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 font-medium hover:bg-gray-50 transition-colors shadow-sm">2</button>
-            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 font-medium hover:bg-gray-50 transition-colors shadow-sm">3</button>
+            <button className="w-8 h-8 rounded-full bg-[#33040D] text-white font-bold flex items-center justify-center shadow-md text-xs sm:text-sm">1</button>
+            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 font-medium hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">2</button>
+            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 font-medium hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">3</button>
             <span className="w-8 h-8 flex items-center justify-center text-gray-400">...</span>
             <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm">&gt;</button>
           </div>

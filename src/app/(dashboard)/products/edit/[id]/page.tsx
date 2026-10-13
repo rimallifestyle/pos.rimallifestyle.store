@@ -182,13 +182,13 @@ export default function EditProductPage({ params }: { params: any }) {
       </div>
 
       {/* Action Buttons Below Header */}
-      <div className="flex items-center justify-end gap-3 mt-2 mb-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-2 mb-6">
         <button 
           disabled={isSubmitting} 
           type="submit"
           form="product-form"
           onClick={() => setIsDraft(true)}
-          className="px-5 py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full text-[13px] font-bold transition-all disabled:opacity-70 shadow-sm flex items-center gap-2"
+          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full text-[13px] font-bold transition-all disabled:opacity-70 shadow-sm flex items-center gap-2"
         >
           {isSubmitting && isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-400" />}
           {isSubmitting && isDraft ? 'Saving Draft...' : 'Save as Draft'}
@@ -199,7 +199,7 @@ export default function EditProductPage({ params }: { params: any }) {
           type="submit"
           form="product-form"
           onClick={() => setIsDraft(false)}
-          className="px-5 py-2.5 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-full text-[13px] font-bold transition-colors disabled:opacity-70 shadow-sm flex items-center gap-2"
+          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-full text-[13px] font-bold transition-colors disabled:opacity-70 shadow-sm flex items-center gap-2"
         >
           {isSubmitting && !isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" strokeWidth={2.5} />}
           {isSubmitting && !isDraft ? 'Updating...' : 'Update Product'}
@@ -258,12 +258,12 @@ export default function EditProductPage({ params }: { params: any }) {
           </RimalCard>
 
           <RimalCard>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
               <h2 className="text-[18px] font-bold text-gray-900">Product Variants (Size & Color)</h2>
               <button 
                 type="button" 
                 onClick={handleAddVariant}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-bold transition-colors"
+                className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-bold transition-colors"
               >
                 <Plus className="w-4 h-4" /> Add Variant
               </button>
@@ -271,14 +271,26 @@ export default function EditProductPage({ params }: { params: any }) {
             
             <div className="space-y-4">
               {variants.map((v, index) => (
-                <div key={index} className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm flex flex-col gap-4 relative">
-                  {variants.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveVariant(index)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500">
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
+                <div key={index} className="p-4 sm:p-5 border border-gray-200 rounded-xl bg-white shadow-sm flex flex-col gap-4 relative">
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-[#33040D]/10 text-[#33040D] flex items-center justify-center text-[10px] font-bold">
+                        {index + 1}
+                      </span>
+                      Variant #{index + 1}
+                    </span>
+                    {variants.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveVariant(index)} 
+                        className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold p-1 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    )}
+                  </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">SKU (Barcode)</label>
                       <input required type="text" value={v.sku} onChange={(e) => updateVariant(index, 'sku', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg font-mono text-sm bg-gray-50 focus:bg-white transition-colors" placeholder="RM-TS-L-BLK" />
@@ -315,7 +327,7 @@ export default function EditProductPage({ params }: { params: any }) {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Selling Price (৳)</label>
                       <input required type="number" min="0" value={v.price} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold text-[#33040D]" />
@@ -430,6 +442,31 @@ export default function EditProductPage({ params }: { params: any }) {
               ))}
             </div>
           </RimalCard>
+
+          {/* Mobile Bottom Submit Actions */}
+          <div className="xl:hidden flex flex-col sm:flex-row gap-3 pt-2">
+            <button 
+              disabled={isSubmitting} 
+              type="submit"
+              form="product-form"
+              onClick={() => setIsDraft(true)}
+              className="w-full justify-center px-5 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+            >
+              {isSubmitting && isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-400" />}
+              {isSubmitting && isDraft ? 'Saving Draft...' : 'Save as Draft'}
+            </button>
+
+            <button 
+              disabled={isSubmitting} 
+              type="submit"
+              form="product-form"
+              onClick={() => setIsDraft(false)}
+              className="w-full justify-center px-5 py-3 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
+            >
+              {isSubmitting && !isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" strokeWidth={2.5} />}
+              {isSubmitting && !isDraft ? 'Updating...' : 'Update Product'}
+            </button>
+          </div>
         </div>
 
       </form>

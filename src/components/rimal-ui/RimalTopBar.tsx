@@ -186,8 +186,33 @@ export default function RimalTopBar({ title, subtitle, emoji, showSearch = true,
         </div>
       </div>
 
-      {/* MOBILE ROW 2: Search & Action Buttons */}
-      <div className="flex flex-col gap-3 md:hidden">
+      {/* MOBILE ROW 2: Search, Outlet & Action Buttons */}
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {outlets.length > 0 && activeOutlet && (
+          <div className="flex items-center justify-between bg-white px-3.5 py-2 rounded-xl border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-[#33040D]/10 text-[#33040D] flex items-center justify-center">
+                <Store className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-gray-800">{activeOutlet.name}</span>
+            </div>
+            {outlets.length > 1 && (
+              <select
+                value={activeOutlet._id}
+                onChange={(e) => {
+                  const selected = outlets.find(o => o._id === e.target.value);
+                  if (selected) handleSelectOutlet(selected);
+                }}
+                className="text-[11px] font-bold text-[#33040D] bg-transparent outline-none cursor-pointer"
+              >
+                {outlets.map((o) => (
+                  <option key={o._id} value={o._id}>{o.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
         {showSearch && (
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
