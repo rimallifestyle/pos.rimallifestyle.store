@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast';
 import Barcode from 'react-barcode';
 import { logoutUser } from '@/actions/auth';
 import { useRouter } from 'next/navigation';
+import NotificationBell from '@/components/rimal-ui/NotificationBell';
 
 export default function POSPage() {
   const router = useRouter();
@@ -395,7 +396,10 @@ export default function POSPage() {
           </div>
 
           {/* End of Day / Utilities */}
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0">
+            <div className="shrink-0">
+              <NotificationBell />
+            </div>
 
             <button 
               onClick={async () => {

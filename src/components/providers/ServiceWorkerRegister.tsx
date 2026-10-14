@@ -7,7 +7,7 @@ export default function ServiceWorkerRegister() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const registerSW = () => {
         navigator.serviceWorker
-          .register('/sw.js')
+          .register('/OneSignalSDKWorker.js')
           .then((reg) => {
             console.log('[PWA] Service Worker registered with scope:', reg.scope);
           })

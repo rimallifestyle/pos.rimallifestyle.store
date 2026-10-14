@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Script from 'next/script';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Share2, PlusSquare, Smartphone, CheckCircle2 } from 'lucide-react';
 import { getPublicOneSignalConfig } from '@/actions/integrations';
 
 declare global {
@@ -18,6 +18,8 @@ export default function OneSignalProvider() {
   const [isPromptDismissed, setIsPromptDismissed] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [appId, setAppId] = useState<string | null>(
     process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || null
   );
@@ -32,8 +34,10 @@ export default function OneSignalProvider() {
       try {
         await OneSignal.init({
           appId: targetAppId,
+          serviceWorkerPath: '/OneSignalSDKWorker.js',
+          serviceWorkerParam: { scope: '/' },
           notifyButton: {
-            enable: false, // Using our own custom UI
+            enable: false, // Using our custom UI
           },
           allowLocalhostAsSecureOrigin: true,
         });
@@ -50,6 +54,13 @@ export default function OneSignalProvider() {
           OneSignal.Notifications.addEventListener('permissionChange', () => {
             if (typeof window !== 'undefined' && 'Notification' in window) {
               setPermission(Notification.permission);
+            }
+          });
+
+          // Handle incoming push when app is in foreground
+          OneSignal.Notifications.addEventListener('foregroundWillDisplay', () => {
+            if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
+              navigator.setAppBadge().catch(() => {});
             }
           });
         }
@@ -73,14 +84,25 @@ export default function OneSignalProvider() {
   }, []);
 
   useEffect(() => {
+    // Detect iOS & Standalone PWA mode
+    if (typeof window !== 'undefined') {
+      const iosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      setIsIOS(iosDevice);
+
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+
+      if ('Notification' in window) {
+        setPermission(Notification.permission);
+      }
+    }
+
     // Check if dismissed in this session
     const dismissed = sessionStorage.getItem('rimal_push_prompt_dismissed');
     if (dismissed === 'true') {
       setIsPromptDismissed(true);
-    }
-
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPermission(Notification.permission);
     }
 
     // Dynamically retrieve configured App ID from database
@@ -148,8 +170,8 @@ export default function OneSignalProvider() {
 
       {/* Modern Slide-Up Push Notification Opt-In Banner */}
       {showBanner && (
-        <div className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[180] max-w-[360px] w-[calc(100vw-32px)] animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-[#33040D] text-white rounded-2xl p-4.5 shadow-[0_12px_40px_rgba(51,4,13,0.35)] border border-white/10 relative overflow-hidden backdrop-blur-md">
+        <div className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[180] max-w-[380px] w-[calc(100vw-32px)] animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-[#33040D] text-white rounded-2xl p-4.5 shadow-[0_16px_45px_rgba(51,4,13,0.45)] border border-white/15 relative overflow-hidden backdrop-blur-md">
             <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
 
             <button 
@@ -160,36 +182,69 @@ export default function OneSignalProvider() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex items-start gap-3 mr-4">
-              <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-white mt-0.5 border border-white/10">
-                <Bell className="w-4 h-4" />
-              </div>
+            {/* Special Instructions for iPhone Safari Users (iOS Web Push requires Add to Home Screen) */}
+            {isIOS && !isStandalone ? (
               <div>
-                <h4 className="text-[13px] font-extrabold text-white leading-tight">Enable Push Alerts</h4>
-                <p className="text-[11px] text-white/80 font-medium mt-1 leading-snug">
-                  Get real-time push alerts on mobile & desktop when sales are made, POS logins occur, or products change.
-                </p>
-              </div>
-            </div>
+                <div className="flex items-start gap-3 mr-4">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-white mt-0.5 border border-white/10">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-[13px] font-extrabold text-white leading-tight">iPhone Push Notifications</h4>
+                    <p className="text-[11px] text-white/80 font-medium mt-1 leading-snug">
+                      To receive push alerts on iPhone: Tap the <strong className="text-white">Share</strong> button below, select <strong className="text-white">Add to Home Screen</strong>, then open the app from your home screen.
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-2 mt-3.5 pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="flex-1 py-2 text-[11px] font-bold text-white/70 hover:text-white transition-colors text-center"
-              >
-                Later
-              </button>
-              <button
-                type="button"
-                onClick={handleEnableNotifications}
-                disabled={isSubscribing}
-                className="flex-1 py-2 bg-white text-[#33040D] rounded-xl text-[11px] font-black shadow-md hover:bg-gray-100 transition-all text-center flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-70"
-              >
-                <Bell className="w-3 h-3" />
-                {isSubscribing ? 'Enabling...' : 'Enable Now'}
-              </button>
-            </div>
+                <div className="flex items-center justify-between gap-2 mt-3.5 pt-3 border-t border-white/10 text-[11px]">
+                  <span className="text-white/60 font-semibold flex items-center gap-1">
+                    <Share2 className="w-3.5 h-3.5" /> Tap Share &rarr; Add to Home
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className="px-3 py-1.5 bg-white/15 hover:bg-white/20 text-white font-bold rounded-lg transition-colors"
+                  >
+                    Got It
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Standard Prompt for Android Chrome, iOS PWA, and Desktop */
+              <div>
+                <div className="flex items-start gap-3 mr-4">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-white mt-0.5 border border-white/10">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-[13px] font-extrabold text-white leading-tight">Enable Push Alerts</h4>
+                    <p className="text-[11px] text-white/80 font-medium mt-1 leading-snug">
+                      Get instant alerts on this device whenever a sale is completed, cashier logs in, or stock changes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-3.5 pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className="flex-1 py-2 text-[11px] font-bold text-white/70 hover:text-white transition-colors text-center"
+                  >
+                    Later
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEnableNotifications}
+                    disabled={isSubscribing}
+                    className="flex-1 py-2 bg-white text-[#33040D] rounded-xl text-[11px] font-black shadow-md hover:bg-gray-100 transition-all text-center flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-70"
+                  >
+                    <Bell className="w-3 h-3" />
+                    {isSubscribing ? 'Enabling...' : 'Enable Now'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

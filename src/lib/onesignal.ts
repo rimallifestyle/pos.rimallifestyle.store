@@ -37,27 +37,60 @@ export async function getActiveOneSignalCredentials() {
   return { appId: null, apiKey: null };
 }
 
+import Notification from '@/models/Notification';
+
 export async function sendPushNotification({ title, message, url, data }: SendPushOptions) {
+  // 1. Always record in-app notification in database for live badge count & notification drawer
+  try {
+    await dbConnect();
+    await Notification.create({
+      title,
+      message,
+      type: data?.type || 'SYSTEM',
+      url: url || '/dashboard',
+      isRead: false,
+      data: data || {},
+    });
+  } catch (dbErr) {
+    console.warn('[Notification DB] Could not persist notification to database:', dbErr);
+  }
+
+  // 2. Fetch OneSignal credentials
   const { appId, apiKey } = await getActiveOneSignalCredentials();
 
   if (!appId || !apiKey) {
-    console.warn('[OneSignal] Skipped sending push notification: OneSignal is not configured in Integrations.');
+    console.warn('[OneSignal] Skipped remote push notification: OneSignal credentials not configured.');
     return { 
-      success: false, 
+      success: true, // Still marked true because in-app notification was successfully created
       skipped: true, 
-      message: 'OneSignal credentials not configured. Please configure OneSignal in Integrations.' 
+      message: 'In-app notification saved. OneSignal push skipped (not configured in Integrations).' 
     };
   }
 
   try {
+    const baseUrl = 'https://pos.rimallifestyle.store';
+    const targetUrl = url ? (url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? url : '/' + url}`) : `${baseUrl}/dashboard`;
+
     const payload = {
       app_id: appId,
       included_segments: ['Total Subscriptions'],
       headings: { en: title },
       contents: { en: message },
-      url: url || 'https://pos.rimallifestyle.store',
-      web_url: url || 'https://pos.rimallifestyle.store',
+      url: targetUrl,
+      web_url: targetUrl,
       data: data || {},
+      // iOS PWA Web Push & Badge increment
+      ios_badgeType: 'Increase',
+      ios_badgeCount: 1,
+      ios_sound: 'default',
+      // Android Web Push & High Priority wakeup
+      priority: 10,
+      android_visibility: 1,
+      android_sound: 'default',
+      // Web Push icon & badge
+      chrome_web_badge: `${baseUrl}/icon-192.png`,
+      chrome_web_icon: `${baseUrl}/icon-192.png`,
+      firefox_icon: `${baseUrl}/icon-192.png`,
     };
 
     const response = await fetch('https://onesignal.com/api/v1/notifications', {

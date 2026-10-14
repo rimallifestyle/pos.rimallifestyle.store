@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Search, Bell, Barcode, MapPin } from 'lucide-react';
+import { Search, Barcode, MapPin } from 'lucide-react';
 import Image from 'next/image';
+import NotificationBell from '@/components/rimal-ui/NotificationBell';
 
 export default function RimalHeader() {
   return (
@@ -39,12 +40,7 @@ export default function RimalHeader() {
           </svg>
         </div>
 
-        <button className="relative text-gray-500 hover:text-gray-900 transition-colors p-2">
-          <Bell className="h-[22px] w-[22px]" />
-          <span className="absolute top-1.5 right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
-            3
-          </span>
-        </button>
+        <NotificationBell />
 
         <div className="flex items-center gap-4 pl-4 border-l border-gray-100">
           <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100 bg-gray-100">
