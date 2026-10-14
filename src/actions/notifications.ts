@@ -1,6 +1,6 @@
 'use server';
 
-import { sendTestPushNotification } from '@/lib/onesignal';
+import { sendTestPushNotification, getActiveOneSignalCredentials } from '@/lib/onesignal';
 
 export async function triggerTestPushNotification() {
   try {
@@ -8,7 +8,7 @@ export async function triggerTestPushNotification() {
     if (res.skipped) {
       return { 
         success: false, 
-        error: 'OneSignal App ID and REST API Key are not set in .env yet. Please add NEXT_PUBLIC_ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY.' 
+        error: 'OneSignal is not configured yet. Please configure OneSignal in Integrations.' 
       };
     }
     if (!res.success) {
@@ -21,8 +21,7 @@ export async function triggerTestPushNotification() {
 }
 
 export async function getNotificationConfigStatus() {
-  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || process.env.ONESIGNAL_APP_ID;
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  const { appId, apiKey } = await getActiveOneSignalCredentials();
 
   return {
     isConfigured: Boolean(appId && apiKey),

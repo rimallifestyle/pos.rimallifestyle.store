@@ -10,16 +10,42 @@ interface SendPushOptions {
   data?: Record<string, any>;
 }
 
+import dbConnect from '@/lib/rimal-db';
+import Settings from '@/models/Settings';
+
+export async function getActiveOneSignalCredentials() {
+  try {
+    await dbConnect();
+    const settings = await Settings.findOne({ type: 'onesignal' }).lean();
+    if (settings?.config?.appId && settings?.config?.restApiKey) {
+      return {
+        appId: settings.config.appId as string,
+        apiKey: settings.config.restApiKey as string,
+      };
+    }
+  } catch (err) {
+    console.warn('[OneSignal] Database lookup failed, checking env:', err);
+  }
+
+  const envAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || process.env.ONESIGNAL_APP_ID;
+  const envApiKey = process.env.ONESIGNAL_REST_API_KEY;
+
+  if (envAppId && envApiKey) {
+    return { appId: envAppId, apiKey: envApiKey };
+  }
+
+  return { appId: null, apiKey: null };
+}
+
 export async function sendPushNotification({ title, message, url, data }: SendPushOptions) {
-  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || process.env.ONESIGNAL_APP_ID;
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  const { appId, apiKey } = await getActiveOneSignalCredentials();
 
   if (!appId || !apiKey) {
-    console.warn('[OneSignal] Skipped sending push notification: NEXT_PUBLIC_ONESIGNAL_APP_ID or ONESIGNAL_REST_API_KEY is not set in environment variables.');
+    console.warn('[OneSignal] Skipped sending push notification: OneSignal is not configured in Integrations.');
     return { 
       success: false, 
       skipped: true, 
-      message: 'OneSignal credentials not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY in .env' 
+      message: 'OneSignal credentials not configured. Please configure OneSignal in Integrations.' 
     };
   }
 

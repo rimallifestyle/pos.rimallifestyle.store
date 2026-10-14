@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
-import { User, Shield, Bell, Building, CheckCircle2, Camera, Loader2, ShoppingCart, Smartphone, Laptop, Send, BellRing, AlertCircle, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { User, Shield, Bell, Building, CheckCircle2, Camera, Loader2, ShoppingCart, Smartphone, Laptop, Send, BellRing, AlertCircle, RefreshCw, Blocks } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getUserProfile, updateUserProfile, requestProfilePasswordChange, verifyProfilePasswordChange } from '@/actions/user';
 import { uploadImageToCloudinary } from '@/actions/upload';
@@ -411,6 +412,14 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href="/integrations"
+                      className="px-4 py-2.5 bg-white border border-gray-200 hover:border-[#33040D] text-gray-700 hover:text-[#33040D] rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      <Blocks className="w-3.5 h-3.5 text-[#33040D]" />
+                      Manage in Integrations
+                    </Link>
+
                     <button
                       type="button"
                       onClick={handleSendTestPush}
@@ -444,13 +453,13 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Service Backend Status</p>
                         <p className="text-sm font-black text-gray-900 mt-0.5">
-                          {notifConfig.isConfigured ? 'Connected to OneSignal' : 'Config Pending (.env)'}
+                          {notifConfig.isConfigured ? 'Connected to OneSignal' : 'Not Configured (Go to Integrations)'}
                         </p>
                       </div>
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         notifConfig.isConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {notifConfig.isConfigured ? 'Active' : 'Setup Required'}
+                        {notifConfig.isConfigured ? 'Active' : 'Setup in Integrations'}
                       </span>
                     </div>
 

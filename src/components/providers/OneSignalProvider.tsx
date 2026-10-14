@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Script from 'next/script';
-import { Bell, X, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
+import { getPublicOneSignalConfig } from '@/actions/integrations';
 
 declare global {
   interface Window {
@@ -17,29 +18,20 @@ export default function OneSignalProvider() {
   const [isPromptDismissed, setIsPromptDismissed] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [appId, setAppId] = useState<string | null>(
+    process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || null
+  );
 
-  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+  const initAttemptedRef = useRef(false);
 
-  useEffect(() => {
-    // Check if dismissed in this session
-    const dismissed = sessionStorage.getItem('rimal_push_prompt_dismissed');
-    if (dismissed === 'true') {
-      setIsPromptDismissed(true);
-    }
-
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPermission(Notification.permission);
-    }
-  }, []);
-
-  const handleInitOneSignal = () => {
-    if (!appId || typeof window === 'undefined') return;
+  const setupOneSignalInstance = useCallback((targetAppId: string) => {
+    if (!targetAppId || typeof window === 'undefined') return;
 
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function(OneSignal: any) {
       try {
         await OneSignal.init({
-          appId: appId,
+          appId: targetAppId,
           notifyButton: {
             enable: false, // Using our own custom UI
           },
@@ -55,7 +47,7 @@ export default function OneSignalProvider() {
             setPermission(Notification.permission);
           }
 
-          OneSignal.Notifications.addEventListener('permissionChange', (permissionChange: boolean) => {
+          OneSignal.Notifications.addEventListener('permissionChange', () => {
             if (typeof window !== 'undefined' && 'Notification' in window) {
               setPermission(Notification.permission);
             }
@@ -78,6 +70,43 @@ export default function OneSignalProvider() {
         setPermission(res);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    // Check if dismissed in this session
+    const dismissed = sessionStorage.getItem('rimal_push_prompt_dismissed');
+    if (dismissed === 'true') {
+      setIsPromptDismissed(true);
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission);
+    }
+
+    // Dynamically retrieve configured App ID from database
+    let isMounted = true;
+    getPublicOneSignalConfig().then((cfg) => {
+      if (isMounted && cfg?.appId) {
+        setAppId(cfg.appId);
+        if (!initAttemptedRef.current) {
+          initAttemptedRef.current = true;
+          setupOneSignalInstance(cfg.appId);
+        }
+      }
+    }).catch(err => {
+      console.warn('[OneSignal] Failed loading public config:', err);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setupOneSignalInstance]);
+
+  const handleInitScriptLoad = () => {
+    if (appId && !initAttemptedRef.current) {
+      initAttemptedRef.current = true;
+      setupOneSignalInstance(appId);
+    }
   };
 
   const handleEnableNotifications = async () => {
@@ -103,7 +132,7 @@ export default function OneSignalProvider() {
     sessionStorage.setItem('rimal_push_prompt_dismissed', 'true');
   };
 
-  // Do not show banner if already granted, denied, or dismissed
+  // Do not show banner if already granted, denied, dismissed, or no App ID configured
   const showBanner = appId && permission !== 'granted' && !isPromptDismissed;
 
   return (
@@ -113,7 +142,7 @@ export default function OneSignalProvider() {
         <Script
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
           strategy="afterInteractive"
-          onLoad={handleInitOneSignal}
+          onLoad={handleInitScriptLoad}
         />
       )}
 
