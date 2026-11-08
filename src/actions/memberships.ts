@@ -28,7 +28,7 @@ export async function getMembershipTiers() {
 export async function updateMembershipTiers(tiers: any[]) {
   try {
     const auth = await getCurrentSession();
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role as string)?.toLowerCase() !== 'admin') {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -63,7 +63,7 @@ export async function requestCustomerMembership(customerId: string, requestedTie
 export async function approveCustomerMembership(customerId: string) {
   try {
     const auth = await getCurrentSession();
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role as string)?.toLowerCase() !== 'admin') {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -89,7 +89,7 @@ export async function approveCustomerMembership(customerId: string) {
 export async function rejectCustomerMembership(customerId: string) {
   try {
     const auth = await getCurrentSession();
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role as string)?.toLowerCase() !== 'admin') {
       return { success: false, error: 'Unauthorized' };
     }
 

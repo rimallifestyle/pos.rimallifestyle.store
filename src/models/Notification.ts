@@ -6,7 +6,17 @@ const NotificationSchema = new mongoose.Schema(
     message: { type: String, required: true },
     type: {
       type: String,
-      enum: ['SALE', 'POS_LOGIN', 'PRODUCT_ADD', 'PRODUCT_DELETE', 'SYSTEM', 'TEST'],
+      enum: [
+        'SALE',
+        'SALE_COMPLETED',
+        'POS_LOGIN',
+        'PRODUCT_ADD',
+        'PRODUCT_ADDED',
+        'PRODUCT_DELETE',
+        'PRODUCT_DELETED',
+        'SYSTEM',
+        'TEST',
+      ],
       default: 'SYSTEM',
     },
     url: { type: String, default: '/dashboard' },

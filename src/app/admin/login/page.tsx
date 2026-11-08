@@ -261,7 +261,7 @@ export default function LoginPage() {
                 className="w-full py-3 md:py-4 mt-3 md:mt-6 bg-[#33040D] text-white rounded-[12px] md:rounded-[16px] font-bold text-[14px] md:text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:translate-y-0 cursor-pointer"
               >
                 {isLoading ? 'Processing...' : (
-                  <>{step === 'login' ? 'Send OTP' : step === 'forgot' ? 'Send Reset Code' : step === 'reset' ? 'Reset Password' : 'Verify & Login'} <ArrowRight className="w-5 h-5" /></>
+                  <>{step === 'login' ? 'Sign In' : step === 'forgot' ? 'Send Reset Code' : step === 'reset' ? 'Reset Password' : 'Verify & Login'} <ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
             </form>

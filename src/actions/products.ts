@@ -140,13 +140,13 @@ export async function createProductWithVariants(data: any) {
 
     // Trigger OneSignal push notification for Product Add
     try {
-      sendProductAddedPushNotification({
+      await sendProductAddedPushNotification({
         productTitle: data.title,
         variantCount: data.variants?.length || 1,
         category: data.category
-      }).catch(err => console.error('[OneSignal] Product added push error:', err));
+      });
     } catch (pushErr) {
-      console.error('[OneSignal] Failed preparing product added push:', pushErr);
+      console.error('[OneSignal] Failed preparing/sending product added push:', pushErr);
     }
 
     return { success: true, product: JSON.parse(JSON.stringify(newProduct)) };
@@ -234,11 +234,11 @@ export async function deleteProduct(id: string) {
 
     // Trigger OneSignal push notification for Product Delete
     try {
-      sendProductDeletedPushNotification({
+      await sendProductDeletedPushNotification({
         productTitle
-      }).catch(err => console.error('[OneSignal] Product deleted push error:', err));
+      });
     } catch (pushErr) {
-      console.error('[OneSignal] Failed preparing product deleted push:', pushErr);
+      console.error('[OneSignal] Failed preparing/sending product deleted push:', pushErr);
     }
     
     return { success: true };

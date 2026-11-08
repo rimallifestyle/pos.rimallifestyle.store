@@ -59,45 +59,26 @@ export async function loginUser(email: string, password: string) {
       return { success: false, error: 'Account is inactive' };
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
-
-    // Send email
-    const emailRes = await sendEmail({
-      to: user.email,
-      subject: 'Your Admin Login OTP - Rimal Warehouse',
-      html: `
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <div style="background-color: #33040D; padding: 24px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 1px;">RIMAL WAREHOUSE</h1>
-          </div>
-          <div style="padding: 32px 24px;">
-            <h2 style="color: #1a1a1a; margin-top: 0; font-size: 20px;">Login Verification</h2>
-            <p style="color: #4a4a4a; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">Hello <strong>${user.name}</strong>,</p>
-            <p style="color: #4a4a4a; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">Please use the following One-Time Password (OTP) to securely log in to your account. This code is valid for 10 minutes.</p>
-            
-            <div style="background-color: #f8f9fa; border: 2px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 24px;">
-              <div style="font-family: monospace; font-size: 36px; font-weight: bold; color: #d63031; letter-spacing: 8px;">${otp}</div>
-            </div>
-            
-            <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin-top: 32px; border-top: 1px solid #eaeaea; padding-top: 20px;">
-              If you did not attempt to log in, please ignore this email or contact support if you have concerns.
-            </p>
-          </div>
-        </div>
-      `
+    // Create session token and log in directly
+    const token = await createToken({ 
+      id: user._id.toString(), 
+      email: user.email, 
+      role: user.role,
+      name: user.name,
+      avatar: user.avatar,
+      outletId: user.outletId?.toString() 
+    });
+    
+    // Set cookie
+    (await cookies()).set('rimal_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24, // 24 hours
     });
 
-    if (!emailRes.success) {
-      return { success: false, error: 'Failed to send OTP email. Please check your SMTP settings.' };
-    }
-
-    return { success: true, requireOtp: true, email: user.email, role: user.role };
+    return { success: true, requireOtp: false, role: user.role };
   } catch (error: any) {
     console.error("Login Error:", error);
     return { success: false, error: error.message || 'Something went wrong' };
@@ -201,13 +182,13 @@ export async function loginWithPin(phone: string, pin: string) {
         const outlet = await Outlet.findById(user.outletId).lean();
         if (outlet) outletName = (outlet as any).name;
       }
-      sendPosLoginPushNotification({
+      await sendPosLoginPushNotification({
         userName: user.name || 'Staff',
         userRole: user.role || 'Cashier',
         outletName
-      }).catch(err => console.error('[OneSignal] POS login push error:', err));
+      });
     } catch (pushErr) {
-      console.error('[OneSignal] Failed preparing POS login push:', pushErr);
+      console.error('[OneSignal] Failed preparing/sending POS login push:', pushErr);
     }
 
     return { success: true, role: user.role, outletId: user.outletId };

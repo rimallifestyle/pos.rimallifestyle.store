@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Script from 'next/script';
 import { Bell, X, Share2, PlusSquare, Smartphone, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getPublicOneSignalConfig } from '@/actions/integrations';
 
 declare global {
@@ -44,23 +45,60 @@ export default function OneSignalProvider() {
 
         setIsInitialized(true);
 
-        // Update permission state
-        if (OneSignal.Notifications) {
-          const isEnabled = OneSignal.Notifications.permission;
-          if (isEnabled) {
-            setPermission(Notification.permission);
+        // Auto Opt-in for devices that already have browser permission granted!
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          setPermission(Notification.permission);
+          if (Notification.permission === 'granted') {
+            try {
+              if (OneSignal.User?.PushSubscription) {
+                await OneSignal.User.PushSubscription.optIn();
+              }
+            } catch (optErr) {
+              console.warn('[OneSignal] Automatic optIn check:', optErr);
+            }
           }
+        }
 
-          OneSignal.Notifications.addEventListener('permissionChange', () => {
+        // Update permission state on change
+        if (OneSignal.Notifications) {
+          OneSignal.Notifications.addEventListener('permissionChange', async (granted: boolean) => {
             if (typeof window !== 'undefined' && 'Notification' in window) {
               setPermission(Notification.permission);
+            }
+            if (granted) {
+              try {
+                if (OneSignal.User?.PushSubscription) {
+                  await OneSignal.User.PushSubscription.optIn();
+                }
+              } catch (e) {}
             }
           });
 
           // Handle incoming push when app is in foreground
-          OneSignal.Notifications.addEventListener('foregroundWillDisplay', () => {
+          OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event: any) => {
             if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
               navigator.setAppBadge().catch(() => {});
+            }
+            const notif = event?.notification;
+            if (notif) {
+              toast.custom(
+                (t) => (
+                  <div
+                    className={`${
+                      t.visible ? 'animate-enter' : 'animate-leave'
+                    } max-w-sm w-full bg-[#33040D] text-white shadow-2xl rounded-2xl p-4 flex items-start gap-3 border border-white/20 z-[99999]`}
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-white mt-0.5">
+                      <Bell className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black tracking-wide text-white uppercase">{notif.title || 'New Notification'}</p>
+                      <p className="mt-0.5 text-xs text-white/90 font-medium leading-relaxed">{notif.body}</p>
+                    </div>
+                  </div>
+                ),
+                { duration: 6000 }
+              );
             }
           });
         }
@@ -71,14 +109,21 @@ export default function OneSignalProvider() {
 
     // Provide global helper function for settings button
     window.__rimalSubscribeNotifications = async () => {
-      if (window.OneSignal && window.OneSignal.Notifications) {
-        await window.OneSignal.Notifications.requestPermission();
+      try {
+        if (window.OneSignal && window.OneSignal.Notifications) {
+          await window.OneSignal.Notifications.requestPermission();
+          if (window.OneSignal.User?.PushSubscription) {
+            await window.OneSignal.User.PushSubscription.optIn();
+          }
+        } else if (typeof window !== 'undefined' && 'Notification' in window) {
+          await Notification.requestPermission();
+        }
+      } catch (e) {
+        console.warn('[OneSignal] Sub helper error:', e);
+      } finally {
         if (typeof window !== 'undefined' && 'Notification' in window) {
           setPermission(Notification.permission);
         }
-      } else if (typeof window !== 'undefined' && 'Notification' in window) {
-        const res = await Notification.requestPermission();
-        setPermission(res);
       }
     };
   }, []);
@@ -105,7 +150,13 @@ export default function OneSignalProvider() {
       setIsPromptDismissed(true);
     }
 
-    // Dynamically retrieve configured App ID from database
+    // If already configured via env or fast cached config
+    if (appId && !initAttemptedRef.current) {
+      initAttemptedRef.current = true;
+      setupOneSignalInstance(appId);
+    }
+
+    // Dynamically retrieve configured App ID from database if not in env
     let isMounted = true;
     getPublicOneSignalConfig().then((cfg) => {
       if (isMounted && cfg?.appId) {
@@ -122,7 +173,7 @@ export default function OneSignalProvider() {
     return () => {
       isMounted = false;
     };
-  }, [setupOneSignalInstance]);
+  }, [appId, setupOneSignalInstance]);
 
   const handleInitScriptLoad = () => {
     if (appId && !initAttemptedRef.current) {
@@ -136,6 +187,13 @@ export default function OneSignalProvider() {
     try {
       if (window.OneSignal && window.OneSignal.Notifications) {
         await window.OneSignal.Notifications.requestPermission();
+        try {
+          if (window.OneSignal.User?.PushSubscription) {
+            await window.OneSignal.User.PushSubscription.optIn();
+          }
+        } catch (subErr) {
+          console.warn('[OneSignal] OptIn notice:', subErr);
+        }
       } else if (typeof window !== 'undefined' && 'Notification' in window) {
         await Notification.requestPermission();
       }
@@ -154,8 +212,8 @@ export default function OneSignalProvider() {
     sessionStorage.setItem('rimal_push_prompt_dismissed', 'true');
   };
 
-  // Do not show banner if already granted, denied, dismissed, or no App ID configured
-  const showBanner = appId && permission !== 'granted' && !isPromptDismissed;
+  // Do not show banner if already granted, denied in browser, dismissed, or no App ID configured
+  const showBanner = appId && permission !== 'granted' && permission !== 'denied' && !isPromptDismissed;
 
   return (
     <>

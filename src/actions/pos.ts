@@ -130,15 +130,15 @@ export async function saveSale(data: any) {
         if (outlet) outletName = (outlet as any).name;
       }
 
-      sendSalePushNotification({
+      await sendSalePushNotification({
         invoiceId,
         total: data.total,
         itemsCount: data.items.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0),
         customerName: data.customerName,
         outletName
-      }).catch(err => console.error('[OneSignal] Sale push notification error:', err));
+      });
     } catch (pushErr) {
-      console.error('[OneSignal] Failed preparing push notification:', pushErr);
+      console.error('[OneSignal] Failed preparing/sending sale push notification:', pushErr);
     }
     
     return { success: true, invoiceId };

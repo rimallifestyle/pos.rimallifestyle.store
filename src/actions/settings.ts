@@ -28,7 +28,7 @@ export async function getPosSettings() {
 export async function updatePosSettings(config: { vatEnabled: boolean, vatPercentage: number }) {
   try {
     const auth = await getCurrentSession();
-    if (!auth || auth.role !== 'admin') {
+    if (!auth || (auth.role as string)?.toLowerCase() !== 'admin') {
       return { success: false, error: 'Unauthorized' };
     }
 

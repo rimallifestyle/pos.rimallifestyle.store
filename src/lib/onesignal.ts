@@ -43,10 +43,19 @@ export async function sendPushNotification({ title, message, url, data }: SendPu
   // 1. Always record in-app notification in database for live badge count & notification drawer
   try {
     await dbConnect();
+    // Normalize type for schema
+    const rawType = (data?.type || 'SYSTEM').toUpperCase();
+    let notifType = 'SYSTEM';
+    if (['SALE', 'SALE_COMPLETED'].includes(rawType)) notifType = 'SALE';
+    else if (['POS_LOGIN'].includes(rawType)) notifType = 'POS_LOGIN';
+    else if (['PRODUCT_ADD', 'PRODUCT_ADDED'].includes(rawType)) notifType = 'PRODUCT_ADD';
+    else if (['PRODUCT_DELETE', 'PRODUCT_DELETED'].includes(rawType)) notifType = 'PRODUCT_DELETE';
+    else if (['TEST'].includes(rawType)) notifType = 'TEST';
+
     await Notification.create({
       title,
       message,
-      type: data?.type || 'SYSTEM',
+      type: notifType,
       url: url || '/dashboard',
       isRead: false,
       data: data || {},
@@ -61,7 +70,7 @@ export async function sendPushNotification({ title, message, url, data }: SendPu
   if (!appId || !apiKey) {
     console.warn('[OneSignal] Skipped remote push notification: OneSignal credentials not configured.');
     return { 
-      success: true, // Still marked true because in-app notification was successfully created
+      success: true, 
       skipped: true, 
       message: 'In-app notification saved. OneSignal push skipped (not configured in Integrations).' 
     };
@@ -71,12 +80,12 @@ export async function sendPushNotification({ title, message, url, data }: SendPu
     const baseUrl = 'https://pos.rimallifestyle.store';
     const targetUrl = url ? (url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? url : '/' + url}`) : `${baseUrl}/dashboard`;
 
+    // Important: In OneSignal v1 API, DO NOT include both `url` and `web_url` (causes "Url Remove url field when setting app_url or web_url" error)
     const payload = {
       app_id: appId,
       included_segments: ['Total Subscriptions'],
       headings: { en: title },
       contents: { en: message },
-      url: targetUrl,
       web_url: targetUrl,
       data: data || {},
       // iOS PWA Web Push & Badge increment
@@ -93,20 +102,45 @@ export async function sendPushNotification({ title, message, url, data }: SendPu
       firefox_icon: `${baseUrl}/icon-192.png`,
     };
 
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Basic ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    const authHeaders = [
+      apiKey.startsWith('os_v2_') ? `Key ${apiKey}` : `Basic ${apiKey}`,
+      apiKey.startsWith('os_v2_') ? `Basic ${apiKey}` : `Key ${apiKey}`,
+    ];
 
-    const result = await response.json();
+    let result: any = null;
+    let lastError: any = null;
 
-    if (!response.ok) {
-      console.error('[OneSignal] API error response:', result);
-      return { success: false, error: result.errors || 'OneSignal API failed' };
+    for (const authHeader of authHeaders) {
+      try {
+        const response = await fetch('https://onesignal.com/api/v1/notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': authHeader,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const resData = await response.json().catch(() => null);
+
+        if (response.ok) {
+          result = resData;
+          break;
+        } else {
+          lastError = resData?.errors || `HTTP ${response.status}`;
+          if (response.status !== 401 && response.status !== 403) {
+            // Not an auth issue, don't retry second auth format
+            break;
+          }
+        }
+      } catch (reqErr: any) {
+        lastError = reqErr.message;
+      }
+    }
+
+    if (!result) {
+      console.error('[OneSignal] API error response:', lastError);
+      return { success: false, error: lastError || 'OneSignal API failed' };
     }
 
     console.log('[OneSignal] Push notification sent successfully:', result);
