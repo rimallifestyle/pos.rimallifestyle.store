@@ -114,13 +114,15 @@ export async function createProductWithVariants(data: any) {
       category: data.category,
       imageUrl: data.imageUrl,
       isActive: data.isActive !== undefined ? data.isActive : true,
+      productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),
+      attributes: data.attributes || {},
       variants: data.variants.map((v: any) => ({
         sku: v.sku,
-        size: v.size,
-        color: v.color,
-        colorCode: v.colorCode,
-        price: v.price,
-        costPrice: v.costPrice
+        size: v.size || 'Free Size',
+        color: v.color || 'Standard',
+        colorCode: v.colorCode || '#000000',
+        price: Number(v.price) || 0,
+        costPrice: Number(v.costPrice) || 0
       }))
     });
     
@@ -190,13 +192,15 @@ export async function updateProductWithVariants(id: string, data: any) {
       category: data.category,
       imageUrl: data.imageUrl,
       isActive: data.isActive !== undefined ? data.isActive : true,
+      productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),
+      attributes: data.attributes || {},
       variants: data.variants.map((v: any) => ({
         sku: v.sku,
-        size: v.size,
-        color: v.color,
-        colorCode: v.colorCode,
-        price: v.price,
-        costPrice: v.costPrice
+        size: v.size || 'Free Size',
+        color: v.color || 'Standard',
+        colorCode: v.colorCode || '#000000',
+        price: Number(v.price) || 0,
+        costPrice: Number(v.costPrice) || 0
       }))
     });
     

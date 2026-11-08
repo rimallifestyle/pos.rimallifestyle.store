@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Plus, Trash2, Save, Loader2, Link as LinkIcon, Folder, ChevronRight, Check, UploadCloud, Rocket } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Link as LinkIcon, Folder, UploadCloud, Rocket, Layers, Tag, Sparkles, Check } from 'lucide-react';
 import { createProductWithVariants } from '@/actions/products';
 import { getCategories, createCategory } from '@/actions/categories';
 import { uploadImageToCloudinary } from '@/actions/upload';
@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 const slugify = (text: string) => {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 };
+
+const COMMON_SIZES = ['Free Size', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '28', '30', '32', '34', '36', '38', '40', '42'];
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -31,12 +33,24 @@ export default function AddProductPage() {
   const [newCatParent, setNewCatParent] = useState('');
   const [isSavingCat, setIsSavingCat] = useState(false);
   
+  // Product Type: 'simple' (single item with size attribute) or 'variable' (multi-variant)
+  const [productType, setProductType] = useState<'simple' | 'variable'>('simple');
+
+  // Simple Product States (Non-variable with Size attribute)
+  const [simpleSku, setSimpleSku] = useState('');
+  const [simpleSize, setSimpleSize] = useState('Free Size');
+  const [customSizeText, setCustomSizeText] = useState('');
+  const [simplePrice, setSimplePrice] = useState<number | ''>('');
+  const [simpleCostPrice, setSimpleCostPrice] = useState<number | ''>('');
+  const [simpleQuantity, setSimpleQuantity] = useState<number | ''>(0);
+  const [simpleColor, setSimpleColor] = useState('');
+  const [simpleColorCode, setSimpleColorCode] = useState('#000000');
+
+  // Variable Product States
+  const [selectedQuickSizes, setSelectedQuickSizes] = useState<string[]>([]);
   const [variants, setVariants] = useState([
     { sku: '', size: 'M', color: '', colorCode: '#000000', price: 0, costPrice: 0, quantity: 0 }
   ]);
-
-  const COLORS = ['Black', 'White', 'Navy Blue', 'Red', 'Olive Green', 'Gray', 'Brown', 'Yellow', 'Pink', 'Purple', 'Beige'];
-  const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'];
 
   // Load categories
   useEffect(() => {
@@ -50,26 +64,84 @@ export default function AddProductPage() {
     loadCats();
   }, []);
 
-  // Auto-generate SKU based on title, size, and color
+  // Auto-generate SKU
   useEffect(() => {
     if (!title) return;
     const prefix = title.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'PRD');
     
-    setVariants(prev => prev.map(v => {
-      if (!v.sku || v.sku.startsWith(prefix)) {
-        const colorCode = v.color.substring(0, 3).toUpperCase();
-        return { ...v, sku: `${prefix}-${v.size}-${colorCode}` };
+    if (productType === 'simple') {
+      const sizeTag = (simpleSize || 'FREE').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!simpleSku || simpleSku.startsWith(prefix)) {
+        setSimpleSku(`${prefix}-${sizeTag}`);
       }
-      return v;
-    }));
-  }, [title, variants.map(v => v.size).join(','), variants.map(v => v.color).join(',')]);
+    } else {
+      setVariants(prev => prev.map(v => {
+        if (!v.sku || v.sku.startsWith(prefix)) {
+          const sizeTag = (v.size || 'M').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const colorCode = v.color ? v.color.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '') : 'STD';
+          return { ...v, sku: `${prefix}-${sizeTag}-${colorCode}` };
+        }
+        return v;
+      }));
+    }
+  }, [title, simpleSize, productType, variants.map(v => v.size).join(','), variants.map(v => v.color).join(',')]);
 
   useEffect(() => {
     setSlug(slugify(title));
   }, [title]);
 
+  const handleSelectSimpleSize = (s: string) => {
+    setSimpleSize(s);
+    setCustomSizeText('');
+  };
+
+  const handleCustomSizeChange = (val: string) => {
+    setCustomSizeText(val);
+    setSimpleSize(val || 'Free Size');
+  };
+
+  // Quick generator for variable mode
+  const toggleQuickSize = (s: string) => {
+    if (selectedQuickSizes.includes(s)) {
+      setSelectedQuickSizes(selectedQuickSizes.filter(x => x !== s));
+    } else {
+      setSelectedQuickSizes([...selectedQuickSizes, s]);
+    }
+  };
+
+  const handleGenerateFromSizes = () => {
+    if (selectedQuickSizes.length === 0) {
+      toast.error('Please select at least one size chip first');
+      return;
+    }
+
+    const prefix = title ? title.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'PRD') : 'PRD';
+    const basePrice = Number(simplePrice) || (variants[0]?.price || 0);
+    const baseCost = Number(simpleCostPrice) || (variants[0]?.costPrice || 0);
+
+    const generated = selectedQuickSizes.map(sz => {
+      const sizeTag = sz.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return {
+        sku: `${prefix}-${sizeTag}-STD`,
+        size: sz,
+        color: '',
+        colorCode: '#000000',
+        price: basePrice,
+        costPrice: baseCost,
+        quantity: 0
+      };
+    });
+
+    setVariants(generated);
+    toast.success(`Generated ${generated.length} size variants!`);
+  };
+
   const handleAddVariant = () => {
-    setVariants([...variants, { sku: '', size: 'M', color: '', colorCode: '#000000', price: 0, costPrice: 0, quantity: 0 }]);
+    const prefix = title ? title.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'PRD') : 'PRD';
+    setVariants([
+      ...variants,
+      { sku: `${prefix}-M-STD`, size: 'M', color: '', colorCode: '#000000', price: Number(simplePrice) || 0, costPrice: Number(simpleCostPrice) || 0, quantity: 0 }
+    ]);
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -118,16 +190,64 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) {
+      toast.error('Please enter a product title');
+      return;
+    }
+
+    let finalVariants: any[] = [];
+
+    if (productType === 'simple') {
+      if (simplePrice === '' || Number(simplePrice) < 0) {
+        toast.error('Please enter a valid selling price');
+        return;
+      }
+      const prefix = title.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'PRD');
+      const sizeTag = (simpleSize || 'FREE').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const sku = simpleSku.trim() || `${prefix}-${sizeTag}`;
+
+      finalVariants = [
+        {
+          sku,
+          size: simpleSize.trim() || 'Free Size',
+          color: simpleColor.trim() || 'Standard',
+          colorCode: simpleColorCode || '#000000',
+          price: Number(simplePrice) || 0,
+          costPrice: Number(simpleCostPrice) || 0,
+          quantity: Number(simpleQuantity) || 0,
+        }
+      ];
+    } else {
+      if (variants.length === 0) {
+        toast.error('Please add at least one variant');
+        return;
+      }
+      finalVariants = variants.map((v, i) => ({
+        ...v,
+        sku: v.sku.trim() || `PRD-${Date.now().toString().slice(-4)}-${i + 1}`,
+        size: v.size?.trim() || 'Free Size',
+        color: v.color?.trim() || 'Standard',
+        colorCode: v.colorCode || '#000000',
+        price: Number(v.price) || 0,
+        costPrice: Number(v.costPrice) || 0,
+        quantity: Number(v.quantity) || 0,
+      }));
+    }
+
     setIsSubmitting(true);
     
     const payload = {
       title,
       slug,
-      category,
+      category: category || 'General',
       description,
       imageUrl,
       isActive: !isDraft,
-      variants
+      productType,
+      attributes: {
+        size: productType === 'simple' ? simpleSize : variants.map(v => v.size)
+      },
+      variants: finalVariants
     };
     
     const res = await createProductWithVariants(payload);
@@ -135,21 +255,17 @@ export default function AddProductPage() {
     
     if (res.success) {
       toast.success(isDraft ? 'Product saved as draft!' : 'Product created successfully!');
-      setTitle('');
-      setVariants([{ sku: '', size: 'M', color: '', colorCode: '#000000', price: 0, costPrice: 0, quantity: 0 }]);
       router.push('/products');
     } else {
       toast.error('Error: ' + res.error);
     }
   };
 
-  // Action buttons moved to the right column below
-
   return (
     <div className="max-w-[1600px] mx-auto pb-16 font-sans">
       <RimalTopBar 
         title="Add New Product" 
-        subtitle="Create products with multiple size/color variants and stock levels" 
+        subtitle="Create simple products with size attributes or multi-variant items" 
         emoji="📦"
       />
       
@@ -160,7 +276,7 @@ export default function AddProductPage() {
           type="submit"
           form="product-form"
           onClick={() => setIsDraft(true)}
-          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full text-[13px] font-bold transition-all disabled:opacity-70 shadow-sm flex items-center gap-2"
+          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full text-[13px] font-bold transition-all disabled:opacity-70 shadow-sm flex items-center gap-2 cursor-pointer"
         >
           {isSubmitting && isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-400" />}
           {isSubmitting && isDraft ? 'Saving Draft...' : 'Save as Draft'}
@@ -171,7 +287,7 @@ export default function AddProductPage() {
           type="submit"
           form="product-form"
           onClick={() => setIsDraft(false)}
-          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-full text-[13px] font-bold transition-colors disabled:opacity-70 shadow-sm flex items-center gap-2"
+          className="flex-1 sm:flex-initial justify-center px-5 py-2.5 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-full text-[13px] font-bold transition-colors disabled:opacity-70 shadow-sm flex items-center gap-2 cursor-pointer"
         >
           {isSubmitting && !isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" strokeWidth={2.5} />}
           {isSubmitting && !isDraft ? 'Publishing...' : 'Publish Product'}
@@ -187,7 +303,7 @@ export default function AddProductPage() {
             
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Product Title</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Product Title *</label>
                 <input 
                   required
                   type="text" 
@@ -229,89 +345,321 @@ export default function AddProductPage() {
             </div>
           </RimalCard>
 
+          {/* Product Type & Inventory / Size Section */}
           <RimalCard>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-              <h2 className="text-[18px] font-bold text-gray-900">Product Variants (Size & Color)</h2>
-              <button 
-                type="button" 
-                onClick={handleAddVariant}
-                className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-bold transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Add Variant
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-[18px] font-bold text-gray-900">Product Configuration</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Choose whether this is a Single Product with a Size Attribute or a Multi-Variant product.
+                </p>
+              </div>
+
+              {/* Type Switcher */}
+              <div className="flex bg-gray-100 p-1 rounded-xl self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setProductType('simple')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    productType === 'simple'
+                      ? 'bg-white text-[#33040D] shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <Tag className="w-3.5 h-3.5" /> Simple (Single + Size)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProductType('variable')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    productType === 'variable'
+                      ? 'bg-white text-[#33040D] shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" /> Variable (Multi-variant)
+                </button>
+              </div>
             </div>
-            
-            <div className="space-y-4">
-              {variants.map((v, index) => (
-                <div key={index} className="p-4 sm:p-5 border border-gray-200 rounded-xl bg-white shadow-sm flex flex-col gap-4 relative">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-[#33040D]/10 text-[#33040D] flex items-center justify-center text-[10px] font-bold">
-                        {index + 1}
-                      </span>
-                      Variant #{index + 1}
+
+            {/* SIMPLE PRODUCT MODE (Non-variable with Size attribute) */}
+            {productType === 'simple' ? (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                
+                {/* Size Attribute Selection */}
+                <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-[#33040D]" />
+                      Size Attribute (সাইজ অ্যাট্রিবিউট)
+                    </label>
+                    <span className="text-xs font-semibold text-[#33040D] bg-[#33040D]/10 px-2.5 py-1 rounded-full">
+                      Selected: <strong>{simpleSize || 'Free Size'}</strong>
                     </span>
-                    {variants.length > 1 && (
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveVariant(index)} 
-                        className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold p-1 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Remove
-                      </button>
-                    )}
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">SKU (Barcode)</label>
-                      <input required type="text" value={v.sku} onChange={(e) => updateVariant(index, 'sku', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg font-mono text-sm bg-gray-50 focus:bg-white transition-colors" placeholder="RM-TS-L-BLK" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Size</label>
-                      <select required value={v.size} onChange={(e) => updateVariant(index, 'size', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none">
-                        {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Color & Name</label>
-                      <div className="flex items-center border border-gray-200 rounded-lg px-2 bg-white focus-within:ring-2 focus-within:ring-[#33040D]/20 transition-all overflow-hidden">
-                        <input 
-                          type="color" 
-                          value={v.colorCode || '#000000'} 
-                          onChange={(e) => updateVariant(index, 'colorCode', e.target.value)} 
-                          className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
-                          title="Pick actual color"
-                        />
-                        <input 
-                          required 
-                          type="text" 
-                          value={v.color} 
-                          onChange={(e) => updateVariant(index, 'color', e.target.value)} 
-                          className="w-full px-2 py-2 text-sm outline-none bg-transparent" 
-                          placeholder="e.g. Navy Blue" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Stock Qty</label>
-                      <input required type="number" min="0" value={v.quantity} onChange={(e) => updateVariant(index, 'quantity', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                    </div>
+
+                  <p className="text-xs text-gray-500 mb-3">
+                    Click a common size below or type a custom size (e.g. 32, 34, 40, Free Size, 100ml):
+                  </p>
+
+                  {/* Common Size Chips */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {COMMON_SIZES.map(s => {
+                      const isSelected = simpleSize === s && !customSizeText;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => handleSelectSimpleSize(s)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#33040D] text-white border-[#33040D] shadow-sm scale-105'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 inline mr-1" />}
+                          {s}
+                        </button>
+                      );
+                    })}
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Selling Price (৳)</label>
-                      <input required type="number" min="0" value={v.price} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold text-[#33040D]" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Cost Price (৳)</label>
-                      <input required type="number" min="0" value={v.costPrice} onChange={(e) => updateVariant(index, 'costPrice', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+
+                  {/* Custom Size Input */}
+                  <div className="pt-2 border-t border-gray-200/70">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                      Or Custom Size Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={customSizeText}
+                      onChange={(e) => handleCustomSizeChange(e.target.value)}
+                      placeholder="Type custom size (e.g. 36, Large, 500g)..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* SKU, Stock, Pricing */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                      SKU (Barcode) *
+                    </label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={simpleSku} 
+                      onChange={(e) => setSimpleSku(e.target.value)} 
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-mono text-sm bg-gray-50 focus:bg-white transition-colors" 
+                      placeholder="PRD-FREE" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                      Stock Quantity *
+                    </label>
+                    <input 
+                      required 
+                      type="number" 
+                      min="0" 
+                      value={simpleQuantity} 
+                      onChange={(e) => setSimpleQuantity(e.target.value === '' ? '' : Number(e.target.value))} 
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                      Selling Price (৳) *
+                    </label>
+                    <input 
+                      required 
+                      type="number" 
+                      min="0" 
+                      value={simplePrice} 
+                      onChange={(e) => setSimplePrice(e.target.value === '' ? '' : Number(e.target.value))} 
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-[#33040D] bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                      Cost Price (৳)
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      value={simpleCostPrice} 
+                      onChange={(e) => setSimpleCostPrice(e.target.value === '' ? '' : Number(e.target.value))} 
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Color */}
+                <div className="pt-3 border-t border-gray-100 flex items-center gap-3">
+                  <div className="w-full sm:w-1/2">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                      Color (Optional - ডিফল্ট 'Standard')
+                    </label>
+                    <div className="flex items-center border border-gray-200 rounded-xl px-2.5 py-1 bg-white focus-within:ring-2 focus-within:ring-[#33040D]/20 transition-all">
+                      <input 
+                        type="color" 
+                        value={simpleColorCode || '#000000'} 
+                        onChange={(e) => setSimpleColorCode(e.target.value)} 
+                        className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+                        title="Pick color"
+                      />
+                      <input 
+                        type="text" 
+                        value={simpleColor} 
+                        onChange={(e) => setSimpleColor(e.target.value)} 
+                        className="w-full px-2 py-1 text-sm outline-none bg-transparent" 
+                        placeholder="Leave empty for Standard" 
+                      />
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+
+              </div>
+            ) : (
+              /* VARIABLE PRODUCT MODE */
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* Fast Generator from Sizes */}
+                <div className="bg-gradient-to-r from-[#33040D]/5 to-transparent p-4 sm:p-5 rounded-2xl border border-[#33040D]/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-[#33040D]" />
+                    <h3 className="text-sm font-bold text-[#33040D]">Quick Generate Variants from Sizes</h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Click the sizes you want, then click Generate to create all variant rows automatically:
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {COMMON_SIZES.map(s => {
+                      const isSelected = selectedQuickSizes.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleQuickSize(s)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#33040D] text-white border-[#33040D]'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 inline mr-1" />}
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateFromSizes}
+                    className="px-4 py-2 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Generate ({selectedQuickSizes.length} Variants)
+                  </button>
+                </div>
+
+                {/* Variant List Controls */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <h3 className="text-[16px] font-bold text-gray-900">Variants ({variants.length})</h3>
+                  <button 
+                    type="button" 
+                    onClick={handleAddVariant}
+                    className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Add Single Variant
+                  </button>
+                </div>
+                
+                {/* Variant Cards */}
+                <div className="space-y-4">
+                  {variants.map((v, index) => (
+                    <div key={index} className="p-4 sm:p-5 border border-gray-200 rounded-xl bg-white shadow-sm flex flex-col gap-4 relative">
+                      <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                        <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-[#33040D]/10 text-[#33040D] flex items-center justify-center text-[10px] font-bold">
+                            {index + 1}
+                          </span>
+                          Variant #{index + 1} ({v.size || 'No Size'}{v.color ? ` / ${v.color}` : ''})
+                        </span>
+                        {variants.length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveVariant(index)} 
+                            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold p-1 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Remove
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">SKU (Barcode)</label>
+                          <input required type="text" value={v.sku} onChange={(e) => updateVariant(index, 'sku', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg font-mono text-sm bg-gray-50 focus:bg-white transition-colors" placeholder="RM-TS-L-BLK" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Size Attribute</label>
+                          <input 
+                            required 
+                            type="text" 
+                            list="size-suggestions"
+                            value={v.size} 
+                            onChange={(e) => updateVariant(index, 'size', e.target.value)} 
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none font-semibold text-gray-800"
+                            placeholder="e.g. M, 32, XL"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Color (Optional)</label>
+                          <div className="flex items-center border border-gray-200 rounded-lg px-2 bg-white focus-within:ring-2 focus-within:ring-[#33040D]/20 transition-all overflow-hidden">
+                            <input 
+                              type="color" 
+                              value={v.colorCode || '#000000'} 
+                              onChange={(e) => updateVariant(index, 'colorCode', e.target.value)} 
+                              className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+                              title="Pick actual color"
+                            />
+                            <input 
+                              type="text" 
+                              value={v.color} 
+                              onChange={(e) => updateVariant(index, 'color', e.target.value)} 
+                              className="w-full px-2 py-2 text-sm outline-none bg-transparent" 
+                              placeholder="Standard / Optional" 
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Stock Qty</label>
+                          <input required type="number" min="0" value={v.quantity} onChange={(e) => updateVariant(index, 'quantity', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-100">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Selling Price (৳)</label>
+                          <input required type="number" min="0" value={v.price} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold text-[#33040D]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Cost Price (৳)</label>
+                          <input required type="number" min="0" value={v.costPrice} onChange={(e) => updateVariant(index, 'costPrice', Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </RimalCard>
         </div>
 
@@ -328,7 +676,7 @@ export default function AddProductPage() {
                     <button 
                       type="button" 
                       onClick={() => setImageUrl('')} 
-                      className="px-4 py-2 bg-white text-red-500 rounded-lg text-[13px] font-bold hover:bg-red-50 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all"
+                      className="px-4 py-2 bg-white text-red-500 rounded-lg text-[13px] font-bold hover:bg-red-50 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all cursor-pointer"
                     >
                       Remove Image
                     </button>
@@ -358,7 +706,7 @@ export default function AddProductPage() {
           <RimalCard>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[16px] font-bold text-gray-900">Product Categories</h2>
-              <button type="button" onClick={() => setIsAddingCat(!isAddingCat)} className="text-[#33040D] hover:text-[#4a0614] text-xs font-bold transition-colors">
+              <button type="button" onClick={() => setIsAddingCat(!isAddingCat)} className="text-[#33040D] hover:text-[#4a0614] text-xs font-bold transition-colors cursor-pointer">
                 {isAddingCat ? 'Cancel' : '+ Add New'}
               </button>
             </div>
@@ -367,7 +715,7 @@ export default function AddProductPage() {
               <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
                 <input 
                   type="text" 
-                  value={newCatName}
+                  value={newCatName} 
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Category Name" 
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#33040D]"
@@ -382,7 +730,7 @@ export default function AddProductPage() {
                     <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
-                <button type="button" onClick={handleSaveCategory} disabled={isSavingCat || !newCatName} className="w-full py-2 bg-[#33040D] text-white rounded-lg text-sm font-bold disabled:opacity-50">
+                <button type="button" onClick={handleSaveCategory} disabled={isSavingCat || !newCatName} className="w-full py-2 bg-[#33040D] text-white rounded-lg text-sm font-bold disabled:opacity-50 cursor-pointer">
                   {isSavingCat ? 'Saving...' : 'Save Category'}
                 </button>
               </div>
@@ -422,7 +770,7 @@ export default function AddProductPage() {
               type="submit"
               form="product-form"
               onClick={() => setIsDraft(true)}
-              className="w-full justify-center px-5 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+              className="w-full justify-center px-5 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               {isSubmitting && isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-400" />}
               {isSubmitting && isDraft ? 'Saving Draft...' : 'Save as Draft'}
@@ -433,7 +781,7 @@ export default function AddProductPage() {
               type="submit"
               form="product-form"
               onClick={() => setIsDraft(false)}
-              className="w-full justify-center px-5 py-3 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
+              className="w-full justify-center px-5 py-3 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
             >
               {isSubmitting && !isDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" strokeWidth={2.5} />}
               {isSubmitting && !isDraft ? 'Publishing...' : 'Publish Product'}
@@ -442,6 +790,11 @@ export default function AddProductPage() {
         </div>
 
       </form>
+
+      {/* Datalist for size suggestions */}
+      <datalist id="size-suggestions">
+        {COMMON_SIZES.map(s => <option key={s} value={s} />)}
+      </datalist>
     </div>
   );
 }

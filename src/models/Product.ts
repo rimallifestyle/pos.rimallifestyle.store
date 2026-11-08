@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IProductVariant {
   sku: string;
   size: string;
-  color: string;
+  color?: string;
   colorCode?: string;
   price: number;
   costPrice: number;
@@ -16,6 +16,8 @@ export interface IProduct extends Document {
   category: string;
   imageUrl?: string;
   isActive: boolean;
+  productType?: 'simple' | 'variable';
+  attributes?: Record<string, any>;
   variants: IProductVariant[];
   createdAt: Date;
   updatedAt: Date;
@@ -23,9 +25,9 @@ export interface IProduct extends Document {
 
 const VariantSchema = new Schema<IProductVariant>({
   sku: { type: String, required: true },
-  size: { type: String, required: true },
-  color: { type: String, required: true },
-  colorCode: { type: String },
+  size: { type: String, required: true, default: 'Free Size' },
+  color: { type: String, default: 'Standard' },
+  colorCode: { type: String, default: '#000000' },
   price: { type: Number, required: true },
   costPrice: { type: Number, required: true }
 });
@@ -38,6 +40,8 @@ const ProductSchema: Schema = new Schema(
     category: { type: String, required: true },
     imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
+    productType: { type: String, enum: ['simple', 'variable'], default: 'variable' },
+    attributes: { type: Schema.Types.Mixed, default: {} },
     variants: [VariantSchema],
   },
   { timestamps: true }

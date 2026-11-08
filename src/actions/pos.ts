@@ -65,11 +65,22 @@ export async function getPosProducts(outletId?: string | null) {
         const stockItem = inventory.find((i: any) => i.sku === v.sku);
         const stock = stockItem ? stockItem.quantity : 0;
         
+        const hasColor = v.color && v.color !== 'Standard' && v.color !== 'Default' && v.color.trim() !== '';
+        const hasSize = v.size && v.size.trim() !== '';
+        let variantLabel = 'Standard';
+        if (hasColor && hasSize) {
+          variantLabel = `${v.color} / ${v.size}`;
+        } else if (hasSize) {
+          variantLabel = `Size: ${v.size}`;
+        } else if (hasColor) {
+          variantLabel = v.color;
+        }
+
         posProducts.push({
           id: `${p._id.toString()}_${v.sku}`,
           productId: p._id.toString(),
           name: p.title,
-          variant: `${v.color} / ${v.size}`,
+          variant: variantLabel,
           sku: v.sku,
           price: v.price,
           stock: stock,
