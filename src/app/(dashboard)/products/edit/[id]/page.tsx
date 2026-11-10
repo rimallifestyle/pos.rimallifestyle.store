@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Plus, Trash2, Save, Loader2, Link as LinkIcon, ArrowLeft, Folder, UploadCloud, Rocket, Layers, Tag, Sparkles, Check, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Link as LinkIcon, ArrowLeft, Folder, UploadCloud, Rocket, Layers, Tag, Sparkles, Check, Package, AlertTriangle, Palette } from 'lucide-react';
 import { getProductById, updateProductWithVariants } from '@/actions/products';
 import { getCategories, createCategory } from '@/actions/categories';
 import { uploadImageToCloudinary } from '@/actions/upload';
@@ -16,6 +16,23 @@ const slugify = (text: string) => {
 };
 
 const COMMON_SIZES = ['Free Size', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '28', '30', '32', '34', '36', '38', '40', '42'];
+
+const COMMON_COLORS = [
+  { name: 'Black', code: '#000000' },
+  { name: 'White', code: '#FFFFFF' },
+  { name: 'Off White', code: '#F8F6F0' },
+  { name: 'Navy Blue', code: '#001F3F' },
+  { name: 'Royal Blue', code: '#4169E1' },
+  { name: 'Red', code: '#FF0000' },
+  { name: 'Maroon', code: '#800000' },
+  { name: 'Olive Green', code: '#556B2F' },
+  { name: 'Dark Green', code: '#006400' },
+  { name: 'Gray', code: '#808080' },
+  { name: 'Beige', code: '#F5F5DC' },
+  { name: 'Brown', code: '#8B4513' },
+  { name: 'Yellow', code: '#FFD700' },
+  { name: 'Pink', code: '#FFC0CB' },
+];
 
 export default function EditProductPage({ params }: { params: any }) {
   const unwrappedParams = React.use(params) as any;
@@ -95,6 +112,9 @@ export default function EditProductPage({ params }: { params: any }) {
             const v0 = data.variants[0];
             setSimpleSku(v0.sku || '');
             setSimpleSize(v0.size || 'Free Size');
+            if (v0.size && !COMMON_SIZES.includes(v0.size)) {
+              setCustomSizeText(v0.size);
+            }
             setSimplePrice(v0.price ?? '');
             setSimpleCostPrice(v0.costPrice ?? '');
             setSimpleQuantity(v0.quantity ?? 0);
@@ -285,7 +305,8 @@ export default function EditProductPage({ params }: { params: any }) {
       isActive: !isDraft,
       productType,
       attributes: {
-        size: productType === 'simple' ? simpleSize : variants.map(v => v.size)
+        size: productType === 'simple' ? simpleSize : variants.map(v => v.size),
+        color: productType === 'simple' ? (simpleColor || 'Standard') : Array.from(new Set(variants.map(v => v.color).filter(Boolean)))
       },
       variants: finalVariants
     };
@@ -440,7 +461,7 @@ export default function EditProductPage({ params }: { params: any }) {
             {/* SIMPLE PRODUCT MODE */}
             {productType === 'simple' ? (
               <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Size Attribute */}
+                {/* 1. Size Attribute Selection */}
                 <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -451,6 +472,10 @@ export default function EditProductPage({ params }: { params: any }) {
                       Selected: <strong>{simpleSize || 'Free Size'}</strong>
                     </span>
                   </div>
+
+                  <p className="text-xs text-gray-500 mb-3">
+                    Click a common size below or type a custom size (e.g. 32, 34, 40, Free Size, 100ml):
+                  </p>
 
                   {/* Common Size Chips */}
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -489,84 +514,163 @@ export default function EditProductPage({ params }: { params: any }) {
                   </div>
                 </div>
 
-                {/* SKU, Stock, Pricing */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                      SKU (Barcode) *
+                {/* 2. Color Attribute Selection */}
+                <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200/80">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-[#33040D]" />
+                      Color Attribute (কালার)
                     </label>
-                    <input 
-                      required 
-                      type="text" 
-                      value={simpleSku} 
-                      onChange={(e) => setSimpleSku(e.target.value)} 
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-mono text-sm bg-gray-50 focus:bg-white transition-colors" 
-                    />
+                    <div className="flex items-center gap-2">
+                      {simpleColor && (
+                        <span className="w-3.5 h-3.5 rounded-full border border-gray-300 shadow-2xs" style={{ backgroundColor: simpleColorCode || '#000000' }} />
+                      )}
+                      <span className="text-xs font-semibold text-[#33040D] bg-[#33040D]/10 px-2.5 py-1 rounded-full">
+                        Selected: <strong>{simpleColor || 'Standard (No Color)'}</strong>
+                      </span>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                      Stock Quantity *
-                    </label>
-                    <input 
-                      required 
-                      type="number" 
-                      min="0" 
-                      value={simpleQuantity} 
-                      onChange={(e) => setSimpleQuantity(e.target.value === '' ? '' : Number(e.target.value))} 
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
-                    />
+                  <p className="text-xs text-gray-500 mb-3">
+                    Click a popular color preset below or type custom color name:
+                  </p>
+
+                  {/* Popular Color Preset Chips */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {COMMON_COLORS.map(c => {
+                      const isSelected = simpleColor.toLowerCase() === c.name.toLowerCase();
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => {
+                            setSimpleColor(c.name);
+                            setSimpleColorCode(c.code);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#33040D] text-white border-[#33040D] shadow-sm scale-105'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full border border-gray-300" style={{ backgroundColor: c.code }} />
+                          {c.name}
+                        </button>
+                      );
+                    })}
+
+                    {simpleColor && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSimpleColor('');
+                          setSimpleColorCode('#000000');
+                        }}
+                        className="px-2.5 py-1.5 text-xs text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer"
+                      >
+                        ✕ Clear Color
+                      </button>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                      Selling Price (৳) *
-                    </label>
-                    <input 
-                      required 
-                      type="number" 
-                      min="0" 
-                      value={simplePrice} 
-                      onChange={(e) => setSimplePrice(e.target.value === '' ? '' : Number(e.target.value))} 
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-[#33040D] bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
-                    />
-                  </div>
+                  {/* Custom Color Name Input + Color Picker */}
+                  <div className="pt-2 border-t border-gray-200/70 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="flex-1">
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                        Custom Color Name:
+                      </label>
+                      <input
+                        type="text"
+                        value={simpleColor}
+                        onChange={(e) => setSimpleColor(e.target.value)}
+                        placeholder="e.g. Off White, Navy Blue, Maroon..."
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                      Cost Price (৳)
-                    </label>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      value={simpleCostPrice} 
-                      onChange={(e) => setSimpleCostPrice(e.target.value === '' ? '' : Number(e.target.value))} 
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
-                    />
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                        Hex Picker:
+                      </label>
+                      <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+                        <input
+                          type="color"
+                          value={simpleColorCode || '#000000'}
+                          onChange={(e) => setSimpleColorCode(e.target.value)}
+                          className="w-6 h-6 rounded cursor-pointer border-0 p-0 bg-transparent"
+                        />
+                        <span className="text-xs font-mono text-gray-500">{simpleColorCode || '#000000'}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Optional Color */}
-                <div className="pt-3 border-t border-gray-100 flex items-center gap-3">
-                  <div className="w-full sm:w-1/2">
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                      Color (Optional - ডিফল্ট 'Standard')
-                    </label>
-                    <div className="flex items-center border border-gray-200 rounded-xl px-2.5 py-1 bg-white focus-within:ring-2 focus-within:ring-[#33040D]/20 transition-all">
+                {/* 3. Single Pricing, SKU & Stock (1 SKU, 1 Regular Price, 1 Cost Price) */}
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Pricing, Stock & SKU (একক তথ্য)
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                        SKU (Barcode) *
+                      </label>
                       <input 
-                        type="color" 
-                        value={simpleColorCode || '#000000'} 
-                        onChange={(e) => setSimpleColorCode(e.target.value)} 
-                        className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
-                        title="Pick color"
-                      />
-                      <input 
+                        required 
                         type="text" 
-                        value={simpleColor} 
-                        onChange={(e) => setSimpleColor(e.target.value)} 
-                        className="w-full px-2 py-1 text-sm outline-none bg-transparent" 
-                        placeholder="Leave empty for Standard" 
+                        value={simpleSku} 
+                        onChange={(e) => setSimpleSku(e.target.value)} 
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl font-mono text-sm bg-gray-50 focus:bg-white transition-colors" 
+                        placeholder="e.g. RL-312" 
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">Single product barcode</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                        Stock Quantity *
+                      </label>
+                      <input 
+                        required 
+                        type="number" 
+                        min="0" 
+                        value={simpleQuantity} 
+                        onChange={(e) => setSimpleQuantity(e.target.value === '' ? '' : Number(e.target.value))} 
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none font-bold" 
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">Total pieces in warehouse</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                        Regular Price (৳) *
+                      </label>
+                      <input 
+                        required 
+                        type="number" 
+                        min="0" 
+                        value={simplePrice} 
+                        onChange={(e) => setSimplePrice(e.target.value === '' ? '' : Number(e.target.value))} 
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-black text-[#33040D] bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
+                        placeholder="0.00"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">১টি বিক্রয়মূল্য</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                        Cost Price (৳)
+                      </label>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        value={simpleCostPrice} 
+                        onChange={(e) => setSimpleCostPrice(e.target.value === '' ? '' : Number(e.target.value))} 
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
+                        placeholder="0.00"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">১টি ক্রয়মূল্য</p>
                     </div>
                   </div>
                 </div>
