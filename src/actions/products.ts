@@ -73,8 +73,19 @@ export async function getProductSummaries() {
     const inventory = await Inventory.find({}).lean();
     
     const summaries = products.map((p: any) => {
-      const productInventory = inventory.filter((i: any) => i.productId.toString() === p._id.toString());
-      const totalStock = productInventory.reduce((acc, curr) => acc + curr.quantity, 0);
+      const productInventory = inventory.filter((i: any) => i.productId?.toString() === p._id.toString());
+      
+      // Accurately calculate total stock by summing ONLY the product's actual current variations!
+      let totalStock = 0;
+      if (p.variants && p.variants.length > 0) {
+        totalStock = p.variants.reduce((acc: number, v: any) => {
+          const invItem = productInventory.find((i: any) => i.sku === v.sku);
+          const qty = invItem ? invItem.quantity : (v.quantity !== undefined ? v.quantity : 0);
+          return acc + (Number(qty) || 0);
+        }, 0);
+      } else if (p.totalStock !== undefined) {
+        totalStock = p.totalStock;
+      }
       
       let status = 'Draft';
       if (p.isActive !== false) {
@@ -91,7 +102,8 @@ export async function getProductSummaries() {
         stock: totalStock,
         status: status,
         img: p.imageUrl || 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=150&q=80',
-        variantCount: p.variants?.length || 0
+        variantCount: p.variants?.length || 0,
+        productType: p.productType || (p.variants?.length > 1 ? 'variable' : 'simple')
       };
     });
     
@@ -106,6 +118,9 @@ export async function createProductWithVariants(data: any) {
   try {
     await connectToDatabase();
     
+    // Calculate total stock across all variations
+    const totalStock = data.variants.reduce((acc: number, v: any) => acc + (Number(v.quantity) || 0), 0);
+
     // Create the product
     const newProduct = new Product({
       title: data.title,
@@ -116,13 +131,15 @@ export async function createProductWithVariants(data: any) {
       isActive: data.isActive !== undefined ? data.isActive : true,
       productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),
       attributes: data.attributes || {},
+      totalStock,
       variants: data.variants.map((v: any) => ({
         sku: v.sku,
         size: v.size || 'Free Size',
         color: v.color || 'Standard',
         colorCode: v.colorCode || '#000000',
         price: Number(v.price) || 0,
-        costPrice: Number(v.costPrice) || 0
+        costPrice: Number(v.costPrice) || 0,
+        quantity: Number(v.quantity) || 0
       }))
     });
     
@@ -132,7 +149,7 @@ export async function createProductWithVariants(data: any) {
     const inventoryOps = data.variants.map((v: any) => ({
       productId: newProduct._id,
       sku: v.sku,
-      quantity: v.quantity || 0,
+      quantity: Number(v.quantity) || 0,
       outletId: null // Master warehouse stock
     }));
     
@@ -170,7 +187,7 @@ export async function getProductById(id: string) {
       const inv = inventory.find((i: any) => i.sku === v.sku);
       return {
         ...v,
-        quantity: inv ? inv.quantity : 0
+        quantity: inv ? inv.quantity : (v.quantity !== undefined ? v.quantity : 0)
       };
     });
     
@@ -185,6 +202,9 @@ export async function updateProductWithVariants(id: string, data: any) {
   try {
     await connectToDatabase();
     
+    // Calculate total stock across all variations
+    const totalStock = data.variants.reduce((acc: number, v: any) => acc + (Number(v.quantity) || 0), 0);
+
     await Product.findByIdAndUpdate(id, {
       title: data.title,
       slug: data.slug,
@@ -194,21 +214,31 @@ export async function updateProductWithVariants(id: string, data: any) {
       isActive: data.isActive !== undefined ? data.isActive : true,
       productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),
       attributes: data.attributes || {},
+      totalStock,
       variants: data.variants.map((v: any) => ({
         sku: v.sku,
         size: v.size || 'Free Size',
         color: v.color || 'Standard',
         colorCode: v.colorCode || '#000000',
         price: Number(v.price) || 0,
-        costPrice: Number(v.costPrice) || 0
+        costPrice: Number(v.costPrice) || 0,
+        quantity: Number(v.quantity) || 0
       }))
     });
     
-    // Update inventory
+    // Clean up any orphaned inventory records for variants no longer present on this product
+    const currentSkus = data.variants.map((v: any) => v.sku);
+    await Inventory.deleteMany({
+      productId: id,
+      outletId: null,
+      sku: { $nin: currentSkus }
+    });
+
+    // Upsert inventory for each current variant
     for (const v of data.variants) {
       await Inventory.findOneAndUpdate(
         { productId: id, sku: v.sku, outletId: null },
-        { $set: { quantity: v.quantity || 0 } },
+        { $set: { quantity: Number(v.quantity) || 0, lastRestocked: new Date() } },
         { upsert: true }
       );
     }

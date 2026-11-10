@@ -20,19 +20,26 @@ export async function getDashboardStats() {
     
     // Total variants stock across all products (Warehouse stock approximation)
     // And low stock calculation
-    const products = await Product.find({}, 'variants');
+    const products = await Product.find({}, 'variants totalStock');
     let totalStock = 0;
     let lowStockCount = 0;
     
-    products.forEach(p => {
+    products.forEach((p: any) => {
+      let productStock = 0;
       let hasLowStock = false;
-      p.variants.forEach((v: any) => {
-        totalStock += (v.quantity || 0);
-        if (v.quantity !== undefined && v.quantity <= 10) {
-          hasLowStock = true;
-        }
-      });
-      if (hasLowStock) lowStockCount++;
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v: any) => {
+          const qty = Number(v.quantity) || 0;
+          productStock += qty;
+          if (qty <= 10) {
+            hasLowStock = true;
+          }
+        });
+      } else {
+        productStock = Number(p.totalStock) || 0;
+      }
+      totalStock += productStock;
+      if (hasLowStock || productStock <= 10) lowStockCount++;
     });
 
     return {

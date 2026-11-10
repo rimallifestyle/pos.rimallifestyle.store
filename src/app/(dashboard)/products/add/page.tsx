@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Plus, Trash2, Save, Loader2, Link as LinkIcon, Folder, UploadCloud, Rocket, Layers, Tag, Sparkles, Check } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Link as LinkIcon, Folder, UploadCloud, Rocket, Layers, Tag, Sparkles, Check, Package, AlertTriangle } from 'lucide-react';
 import { createProductWithVariants } from '@/actions/products';
 import { getCategories, createCategory } from '@/actions/categories';
 import { uploadImageToCloudinary } from '@/actions/upload';
@@ -51,6 +51,17 @@ export default function AddProductPage() {
   const [variants, setVariants] = useState([
     { sku: '', size: 'M', color: '', colorCode: '#000000', price: 0, costPrice: 0, quantity: 0 }
   ]);
+
+  const totalVariationStock = variants.reduce((sum, v) => sum + (Number(v.quantity) || 0), 0);
+
+  const getDuplicateSkus = () => {
+    const counts: Record<string, number> = {};
+    variants.forEach(v => {
+      const s = v.sku?.trim().toUpperCase();
+      if (s) counts[s] = (counts[s] || 0) + 1;
+    });
+    return Object.keys(counts).filter(k => counts[k] > 1);
+  };
 
   // Load categories
   useEffect(() => {
@@ -220,6 +231,11 @@ export default function AddProductPage() {
     } else {
       if (variants.length === 0) {
         toast.error('Please add at least one variant');
+        return;
+      }
+      const duplicates = getDuplicateSkus();
+      if (duplicates.length > 0) {
+        toast.error(`Duplicate SKU detected: "${duplicates.join(', ')}". Each variation must have a unique SKU (Barcode) to calculate and track stock separately.`);
         return;
       }
       finalVariants = variants.map((v, i) => ({
@@ -569,17 +585,45 @@ export default function AddProductPage() {
                   </button>
                 </div>
 
-                {/* Variant List Controls */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <h3 className="text-[16px] font-bold text-gray-900">Variants ({variants.length})</h3>
-                  <button 
-                    type="button" 
-                    onClick={handleAddVariant}
-                    className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" /> Add Single Variant
-                  </button>
+                {/* Total Stock Banner & Variant Controls */}
+                <div className="p-4 bg-gradient-to-r from-[#33040D]/10 via-[#33040D]/5 to-transparent rounded-2xl border border-[#33040D]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#33040D] text-white flex items-center justify-center shadow-md flex-shrink-0">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                        Total Stock (Calculated from all {variants.length} variations)
+                      </span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[26px] font-black text-[#33040D] leading-none">
+                          {totalVariationStock.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-bold text-gray-600">pcs total stock</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button 
+                      type="button" 
+                      onClick={handleAddVariant}
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-[#33040D] hover:bg-[#4a0614] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" /> Add Single Variant
+                    </button>
+                  </div>
                 </div>
+
+                {/* Duplicate SKU Warning */}
+                {getDuplicateSkus().length > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-medium flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span>
+                      Duplicate SKU detected ({getDuplicateSkus().join(', ')}). Each variation must have a unique SKU (e.g. RL-312-S, RL-312-M) so each variation's stock is calculated accurately.
+                    </span>
+                  </div>
+                )}
                 
                 {/* Variant Cards */}
                 <div className="space-y-4">

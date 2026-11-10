@@ -7,6 +7,7 @@ export interface IProductVariant {
   colorCode?: string;
   price: number;
   costPrice: number;
+  quantity?: number;
 }
 
 export interface IProduct extends Document {
@@ -18,6 +19,7 @@ export interface IProduct extends Document {
   isActive: boolean;
   productType?: 'simple' | 'variable';
   attributes?: Record<string, any>;
+  totalStock?: number;
   variants: IProductVariant[];
   createdAt: Date;
   updatedAt: Date;
@@ -29,7 +31,8 @@ const VariantSchema = new Schema<IProductVariant>({
   color: { type: String, default: 'Standard' },
   colorCode: { type: String, default: '#000000' },
   price: { type: Number, required: true },
-  costPrice: { type: Number, required: true }
+  costPrice: { type: Number, required: true },
+  quantity: { type: Number, default: 0 }
 });
 
 const ProductSchema: Schema = new Schema(
@@ -42,6 +45,7 @@ const ProductSchema: Schema = new Schema(
     isActive: { type: Boolean, default: true },
     productType: { type: String, enum: ['simple', 'variable'], default: 'variable' },
     attributes: { type: Schema.Types.Mixed, default: {} },
+    totalStock: { type: Number, default: 0 },
     variants: [VariantSchema],
   },
   { timestamps: true }
