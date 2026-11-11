@@ -22,6 +22,10 @@ export default function BarcodeCenterPage() {
   const [horizontalOffset, setHorizontalOffset] = useState(0);
   const [scaleOffset, setScaleOffset] = useState(90);
 
+  // Full Barcode Only Mode (no text, no price, no sku)
+  const [barcodeOnly, setBarcodeOnly] = useState(true);
+  const [showSkuUnderBarcode, setShowSkuUnderBarcode] = useState(false);
+
   // Scanner Live Test State
   const [testScanInput, setTestScanInput] = useState('');
   const [testScanResult, setTestScanResult] = useState<any>(null);
@@ -337,6 +341,28 @@ export default function BarcodeCenterPage() {
                   />
                   <span className="text-[10px] text-gray-400">{scaleOffset}%</span>
                 </div>
+                <div className="flex flex-col gap-2 w-full max-w-[200px] pt-2 border-t border-gray-100">
+                  <label className="flex items-center gap-2 text-[12px] font-bold text-[#33040D] cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={barcodeOnly} 
+                      onChange={e => setBarcodeOnly(e.target.checked)} 
+                      className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" 
+                    />
+                    <span>Full Barcode Only (No text/price)</span>
+                  </label>
+                  {barcodeOnly && (
+                    <label className="flex items-center gap-2 text-[11px] font-medium text-gray-600 pl-6 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showSkuUnderBarcode} 
+                        onChange={e => setShowSkuUnderBarcode(e.target.checked)} 
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" 
+                      />
+                      <span>Show SKU below barcode</span>
+                    </label>
+                  )}
+                </div>
                 <label className="flex items-center gap-2 text-[12px] font-bold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
                   <input type="checkbox" checked={isRotated} onChange={e => setIsRotated(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" />
                   Rotate 90° (Fix Printer Orientation)
@@ -380,27 +406,48 @@ export default function BarcodeCenterPage() {
                       className="w-full h-full flex flex-col items-center justify-center absolute inset-0 px-1 print-scale-target"
                       style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px)` }}
                     >
-                      <div className="w-full text-center">
-                        <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
-                      </div>
-                      <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                      <div className="w-full flex justify-center mt-0.5">
-                        <Barcode 
-                          value={item.sku} 
-                          format="CODE128"
-                          width={1.2} 
-                          height={22} 
-                          fontSize={10} 
-                          displayValue={true}
-                          background="#ffffff"
-                          lineColor="#000000"
-                          margin={2}
-                        />
-                      </div>
-                      <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
-                        ৳ {item.price} 
-                        <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
-                      </p>
+                      {barcodeOnly ? (
+                        /* FULL BARCODE ONLY (NO TEXT, NO PRICE, NO SKU) */
+                        <div className="w-full h-full flex flex-col items-center justify-center py-0.5">
+                          <Barcode 
+                            value={item.sku} 
+                            format="CODE128"
+                            width={1.25} 
+                            height={showSkuUnderBarcode ? 48 : 58} 
+                            fontSize={10} 
+                            displayValue={showSkuUnderBarcode}
+                            textMargin={2}
+                            background="#ffffff"
+                            lineColor="#000000"
+                            margin={4}
+                          />
+                        </div>
+                      ) : (
+                        /* CLASSIC MODE (WITH PRODUCT NAME, SIZE/COLOR & PRICE) */
+                        <>
+                          <div className="w-full text-center">
+                            <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
+                          </div>
+                          <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
+                          <div className="w-full flex justify-center mt-0.5">
+                            <Barcode 
+                              value={item.sku} 
+                              format="CODE128"
+                              width={1.2} 
+                              height={22} 
+                              fontSize={10} 
+                              displayValue={true}
+                              background="#ffffff"
+                              lineColor="#000000"
+                              margin={2}
+                            />
+                          </div>
+                          <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
+                            ৳ {item.price} 
+                            <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
