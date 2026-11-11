@@ -18,9 +18,9 @@ export default function BarcodeCenterPage() {
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [isRotated, setIsRotated] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(0);
+  const [verticalOffset, setVerticalOffset] = useState(16);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
-  const [scaleOffset, setScaleOffset] = useState(100);
+  const [scaleOffset, setScaleOffset] = useState(90);
 
   // Scanner Live Test State
   const [testScanInput, setTestScanInput] = useState('');
@@ -131,21 +131,6 @@ export default function BarcodeCenterPage() {
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
       <style>{`
         @media print {
-          @page {
-            size: auto;
-            margin: 0mm;
-          }
-          body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #ffffff !important;
-          }
-          .barcode-page-wrapper {
-            page-break-after: always !important;
-            break-after: page !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
           .print-scale-target {
             transform: translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100}) !important;
           }
@@ -157,8 +142,6 @@ export default function BarcodeCenterPage() {
         }
         .barcode-sticker svg {
           shape-rendering: crispEdges !important;
-          display: block;
-          margin: 0 auto;
         }
       `}</style>
       <div className="print:hidden">
@@ -388,52 +371,36 @@ export default function BarcodeCenterPage() {
             
             {printQueue.flatMap(item => 
               Array.from({ length: item.qty }).map((_, i) => (
-                <div key={`${item.sku}-${i}`} className="barcode-page-wrapper print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden print:p-0 print:m-0">
+                <div key={`${item.sku}-${i}`} className="barcode-page-wrapper transform scale-[1.5] origin-top mb-12 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden">
                   <div 
-                    className="barcode-sticker w-[1.5in] h-[1in] bg-white border border-gray-200 rounded-md mx-auto print:border-none print:rounded-none box-border relative flex flex-col items-center justify-between py-1 px-1.5 shadow-xs print:shadow-none"
-                    style={{ 
-                      transform: isRotated ? 'rotate(90deg)' : 'none',
-                      backgroundColor: '#ffffff'
-                    }}
+                    className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-200 rounded-md mx-auto print:border-none print:rounded-none box-border relative"
+                    style={{ transform: isRotated ? 'rotate(90deg)' : 'none' }}
                   >
                     <div 
-                      className="w-full h-full flex flex-col items-center justify-between text-center print-scale-target"
-                      style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100})` }}
+                      className="w-full h-full flex flex-col items-center justify-center absolute inset-0 px-1 print-scale-target"
+                      style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px)` }}
                     >
-                      {/* Top Header: Brand & Product Name */}
-                      <div className="w-full text-center leading-none">
-                        <p className="text-[10px] font-black tracking-wider text-black uppercase truncate">
-                          {item.name || 'RIMAL'}
-                        </p>
-                        <p className="text-[9px] font-bold text-gray-700 leading-tight mt-0.5">
-                          {item.size ? `Size: ${item.size}` : ''} {item.color && item.color !== 'Standard' ? `| ${item.color}` : ''}
-                        </p>
+                      <div className="w-full text-center">
+                        <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
                       </div>
-
-                      {/* Barcode: High-Contrast, Sharp Code128 with Quiet Zone */}
-                      <div className="w-full flex justify-center items-center my-0.5 bg-white">
+                      <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
+                      <div className="w-full flex justify-center mt-0.5">
                         <Barcode 
                           value={item.sku} 
                           format="CODE128"
-                          width={1.25} 
-                          height={28} 
-                          fontSize={9} 
+                          width={1.2} 
+                          height={22} 
+                          fontSize={10} 
                           displayValue={true}
-                          textMargin={1}
-                          font="monospace"
                           background="#ffffff"
                           lineColor="#000000"
-                          margin={4}
+                          margin={2}
                         />
                       </div>
-
-                      {/* Bottom Footer: Price */}
-                      <div className="w-full text-center leading-none pb-0.5">
-                        <p className="text-[12px] font-black text-black leading-none flex items-baseline justify-center gap-1">
-                          <span>৳ {item.price}</span>
-                          <span className="text-[8px] font-bold text-gray-600">(VAT Incl.)</span>
-                        </p>
-                      </div>
+                      <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
+                        ৳ {item.price} 
+                        <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
+                      </p>
                     </div>
                   </div>
                 </div>
