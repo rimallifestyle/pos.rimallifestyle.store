@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import Barcode from 'react-barcode';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, Database, Scan, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, Database } from 'lucide-react';
 import { searchProducts, getAllProducts, createProductWithVariants } from '@/actions/products';
 
 export default function BarcodeCenterPage() {
@@ -18,33 +18,9 @@ export default function BarcodeCenterPage() {
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [isRotated, setIsRotated] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(0);
+  const [verticalOffset, setVerticalOffset] = useState(16);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
-  const [scaleOffset, setScaleOffset] = useState(95);
-  const [barcodeWidth, setBarcodeWidth] = useState(0.82);
-
-  // Full Barcode Only Mode (no text, no price, no sku)
-  const [barcodeOnly, setBarcodeOnly] = useState(true);
-  const [showSkuUnderBarcode, setShowSkuUnderBarcode] = useState(false);
-
-  // Scanner Live Test State
-  const [testScanInput, setTestScanInput] = useState('');
-  const [testScanResult, setTestScanResult] = useState<any>(null);
-
-  const handleTestScan = (val: string) => {
-    const raw = val.trim();
-    setTestScanInput(raw);
-    if (!raw) {
-      setTestScanResult(null);
-      return;
-    }
-    const match = catalog.find(p => p.sku?.toLowerCase() === raw.toLowerCase() || raw.toLowerCase().includes(p.sku?.toLowerCase()));
-    if (match) {
-      setTestScanResult({ found: true, product: match });
-    } else {
-      setTestScanResult({ found: false, raw });
-    }
-  };
+  const [scaleOffset, setScaleOffset] = useState(70);
 
   // Form for quick add
   const [newProd, setNewProd] = useState({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
@@ -136,47 +112,9 @@ export default function BarcodeCenterPage() {
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
       <style>{`
         @media print {
-          @page {
-            size: 1.5in 1in;
-            margin: 0;
-          }
-          body {
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          .barcode-page-wrapper {
-            width: 1.5in !important;
-            height: 1in !important;
-            page-break-after: always !important;
-            break-after: page !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-          }
-          .barcode-sticker {
-            width: 1.5in !important;
-            height: 1in !important;
-            overflow: hidden !important;
-            page-break-inside: avoid !important;
-          }
           .print-scale-target {
             transform: translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100}) !important;
-            transform-origin: center center !important;
           }
-          svg, rect, path {
-            shape-rendering: crispEdges !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-        .barcode-sticker svg {
-          max-width: 86% !important;
-          max-height: 85% !important;
-          height: auto !important;
-          display: block;
-          margin: 0 auto;
-          shape-rendering: crispEdges !important;
         }
       `}</style>
       <div className="print:hidden">
@@ -192,53 +130,6 @@ export default function BarcodeCenterPage() {
         {/* Left Column - Builder & Queue (Not printable) */}
         <div className="xl:col-span-7 space-y-6 print:hidden">
           
-          {/* Hardware Scanner Live Test Box */}
-          <RimalCard className="animate-on-load bg-gradient-to-r from-[#33040D]/5 to-transparent border border-[#33040D]/15">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-bold text-[#33040D] flex items-center gap-2">
-                <Scan className="w-4 h-4 text-[#33040D]" /> Hardware Scanner Test (স্ক্যানার টেস্ট করুন)
-              </h2>
-              <span className="text-[11px] font-medium text-gray-500">Scan any tag or type SKU</span>
-            </div>
-            <div className="relative">
-              <input 
-                type="text"
-                value={testScanInput}
-                onChange={(e) => handleTestScan(e.target.value)}
-                placeholder="Click here & scan any barcode with your handheld scanner..."
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#33040D]/20 outline-none"
-              />
-            </div>
-            {testScanResult && (
-              <div className={`mt-3 p-3 rounded-xl border flex items-center justify-between text-xs font-medium ${
-                testScanResult.found 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-                  : 'bg-amber-50 border-amber-200 text-amber-800'
-              }`}>
-                <div className="flex items-center gap-2">
-                  {testScanResult.found ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-amber-600" />}
-                  <div>
-                    {testScanResult.found ? (
-                      <>
-                        <span className="font-bold">{testScanResult.product.name}</span>
-                        <span className="text-gray-500 ml-2">SKU: {testScanResult.product.sku} | Price: ৳{testScanResult.product.price}</span>
-                      </>
-                    ) : (
-                      <>
-                        Scanned: <span className="font-mono font-bold">"{testScanResult.raw}"</span> (No match in DB)
-                      </>
-                    )}
-                  </div>
-                </div>
-                {testScanResult.found && (
-                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold text-[10px]">
-                    ✓ 100% Scannable
-                  </span>
-                )}
-              </div>
-            )}
-          </RimalCard>
-
           {/* Create Product Inline Form */}
           <RimalCard className="animate-on-load bg-gray-50 border border-gray-100">
             <h2 className="text-[16px] font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -337,19 +228,6 @@ export default function BarcodeCenterPage() {
               </div>
               <div className="flex flex-col gap-3 items-end">
                 <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Barcode Bar Width (দাগের ঘনত্ব)</label>
-                  <input 
-                    type="range" 
-                    min="0.65" 
-                    max="1.05" 
-                    step="0.02"
-                    value={barcodeWidth} 
-                    onChange={(e) => setBarcodeWidth(Number(e.target.value))} 
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-[10px] text-gray-400">{barcodeWidth}px (কমিয়ে সাইডে ফাঁকা মার্জিন রাখুন)</span>
-                </div>
-                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
                   <label className="text-[11px] font-bold text-gray-500 uppercase">Horizontal Offset (Fix Side Gap)</label>
                   <input 
                     type="range" 
@@ -365,8 +243,8 @@ export default function BarcodeCenterPage() {
                   <label className="text-[11px] font-bold text-gray-500 uppercase">Vertical Offset (Fix Top Cut-off)</label>
                   <input 
                     type="range" 
-                    min="-30" 
-                    max="30" 
+                    min="-20" 
+                    max="20" 
                     value={verticalOffset} 
                     onChange={(e) => setVerticalOffset(Number(e.target.value))} 
                     className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
@@ -384,28 +262,6 @@ export default function BarcodeCenterPage() {
                     className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                   />
                   <span className="text-[10px] text-gray-400">{scaleOffset}%</span>
-                </div>
-                <div className="flex flex-col gap-2 w-full max-w-[200px] pt-2 border-t border-gray-100">
-                  <label className="flex items-center gap-2 text-[12px] font-bold text-[#33040D] cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={barcodeOnly} 
-                      onChange={e => setBarcodeOnly(e.target.checked)} 
-                      className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" 
-                    />
-                    <span>Full Barcode Only (No text/price)</span>
-                  </label>
-                  {barcodeOnly && (
-                    <label className="flex items-center gap-2 text-[11px] font-medium text-gray-600 pl-6 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={showSkuUnderBarcode} 
-                        onChange={e => setShowSkuUnderBarcode(e.target.checked)} 
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" 
-                      />
-                      <span>Show SKU below barcode</span>
-                    </label>
-                  )}
                 </div>
                 <label className="flex items-center gap-2 text-[12px] font-bold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
                   <input type="checkbox" checked={isRotated} onChange={e => setIsRotated(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" />
@@ -450,48 +306,25 @@ export default function BarcodeCenterPage() {
                       className="w-full h-full flex flex-col items-center justify-center absolute inset-0 px-1 print-scale-target"
                       style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px)` }}
                     >
-                      {barcodeOnly ? (
-                        /* FULL BARCODE ONLY (NO TEXT, NO PRICE, NO SKU) */
-                        <div className="w-full h-full flex flex-col items-center justify-center py-0.5">
-                          <Barcode 
-                            value={item.sku} 
-                            format="CODE128"
-                            width={barcodeWidth} 
-                            height={showSkuUnderBarcode ? 48 : 62} 
-                            fontSize={10} 
-                            displayValue={showSkuUnderBarcode}
-                            textMargin={2}
-                            background="#ffffff"
-                            lineColor="#000000"
-                            margin={4}
-                          />
-                        </div>
-                      ) : (
-                        /* CLASSIC MODE (WITH PRODUCT NAME, SIZE/COLOR & PRICE) */
-                        <>
-                          <div className="w-full text-center">
-                            <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
-                          </div>
-                          <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                          <div className="w-full flex justify-center mt-0.5">
-                            <Barcode 
-                              value={item.sku} 
-                              format="CODE128"
-                              width={Math.min(barcodeWidth, 0.82)} 
-                              height={22} 
-                              fontSize={10} 
-                              displayValue={true}
-                              background="#ffffff"
-                              lineColor="#000000"
-                              margin={2}
-                            />
-                          </div>
-                          <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
-                            ৳ {item.price} 
-                            <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
-                          </p>
-                        </>
-                      )}
+                      <div className="w-full text-center">
+                        <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
+                      </div>
+                      <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
+                      <div className="w-full flex justify-center mt-0.5">
+                        <Barcode 
+                          value={item.sku} 
+                          width={1.3} 
+                          height={22} 
+                          fontSize={10} 
+                          background="transparent"
+                          lineColor="#000"
+                          margin={0}
+                        />
+                      </div>
+                      <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
+                        ৳ {item.price} 
+                        <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
+                      </p>
                     </div>
                   </div>
                 </div>
