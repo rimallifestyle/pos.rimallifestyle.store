@@ -142,6 +142,10 @@ export default function BarcodeCenterPage() {
         }
         .barcode-sticker svg {
           shape-rendering: crispEdges !important;
+          max-width: 95% !important;
+          height: auto !important;
+          display: block;
+          margin: 0 auto;
         }
       `}</style>
       <div className="print:hidden">
@@ -384,14 +388,16 @@ export default function BarcodeCenterPage() {
                         <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
                       </div>
                       <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                      <div className="w-full flex justify-center mt-0.5">
+                      <div className="w-full flex justify-center items-center my-0.5 max-w-full px-1 overflow-hidden">
                         <Barcode 
                           value={item.sku} 
                           format="CODE128"
-                          width={1.2} 
-                          height={22} 
-                          fontSize={10} 
+                          width={1.0} 
+                          height={24} 
+                          fontSize={9} 
                           displayValue={true}
+                          textMargin={1}
+                          font="monospace"
                           background="#ffffff"
                           lineColor="#000000"
                           margin={2}
