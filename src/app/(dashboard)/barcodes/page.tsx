@@ -21,6 +21,7 @@ export default function BarcodeCenterPage() {
   const [verticalOffset, setVerticalOffset] = useState(16);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
   const [scaleOffset, setScaleOffset] = useState(90);
+  const [barcodeWidth, setBarcodeWidth] = useState(0.75);
 
   // Scanner Live Test State
   const [testScanInput, setTestScanInput] = useState('');
@@ -142,7 +143,7 @@ export default function BarcodeCenterPage() {
         }
         .barcode-sticker svg {
           shape-rendering: crispEdges !important;
-          max-width: 95% !important;
+          max-width: 90% !important;
           height: auto !important;
           display: block;
           margin: 0 auto;
@@ -341,6 +342,19 @@ export default function BarcodeCenterPage() {
                   />
                   <span className="text-[10px] text-gray-400">{scaleOffset}%</span>
                 </div>
+                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
+                  <label className="text-[11px] font-bold text-gray-500 uppercase">Barcode Bar Width (দাগের ঘনত্ব ও সাইজ)</label>
+                  <input 
+                    type="range" 
+                    min="0.6" 
+                    max="1.1" 
+                    step="0.05"
+                    value={barcodeWidth} 
+                    onChange={(e) => setBarcodeWidth(Number(e.target.value))} 
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <span className="text-[10px] text-gray-400">{barcodeWidth} (কমিয়ে সাইডে প্যাডিং বাড়ান)</span>
+                </div>
                 <label className="flex items-center gap-2 text-[12px] font-bold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
                   <input type="checkbox" checked={isRotated} onChange={e => setIsRotated(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" />
                   Rotate 90° (Fix Printer Orientation)
@@ -388,19 +402,19 @@ export default function BarcodeCenterPage() {
                         <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
                       </div>
                       <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                      <div className="w-full flex justify-center items-center my-0.5 max-w-full px-1 overflow-hidden">
+                      <div className="w-full flex justify-center items-center my-0.5 max-w-full px-2 overflow-hidden">
                         <Barcode 
                           value={item.sku} 
                           format="CODE128"
-                          width={1.0} 
-                          height={24} 
+                          width={barcodeWidth} 
+                          height={22} 
                           fontSize={9} 
                           displayValue={true}
                           textMargin={1}
                           font="monospace"
                           background="#ffffff"
                           lineColor="#000000"
-                          margin={2}
+                          margin={4}
                         />
                       </div>
                       <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
