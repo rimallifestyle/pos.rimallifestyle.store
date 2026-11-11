@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import Barcode from 'react-barcode';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, Database } from 'lucide-react';
+import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, Database, Scan, CheckCircle2, AlertCircle } from 'lucide-react';
 import { searchProducts, getAllProducts, createProductWithVariants } from '@/actions/products';
 
 export default function BarcodeCenterPage() {
@@ -18,9 +18,28 @@ export default function BarcodeCenterPage() {
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [isRotated, setIsRotated] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(16);
+  const [verticalOffset, setVerticalOffset] = useState(0);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
-  const [scaleOffset, setScaleOffset] = useState(70);
+  const [scaleOffset, setScaleOffset] = useState(100);
+
+  // Scanner Live Test State
+  const [testScanInput, setTestScanInput] = useState('');
+  const [testScanResult, setTestScanResult] = useState<any>(null);
+
+  const handleTestScan = (val: string) => {
+    const raw = val.trim();
+    setTestScanInput(raw);
+    if (!raw) {
+      setTestScanResult(null);
+      return;
+    }
+    const match = catalog.find(p => p.sku?.toLowerCase() === raw.toLowerCase() || raw.toLowerCase().includes(p.sku?.toLowerCase()));
+    if (match) {
+      setTestScanResult({ found: true, product: match });
+    } else {
+      setTestScanResult({ found: false, raw });
+    }
+  };
 
   // Form for quick add
   const [newProd, setNewProd] = useState({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
@@ -112,9 +131,34 @@ export default function BarcodeCenterPage() {
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
       <style>{`
         @media print {
+          @page {
+            size: auto;
+            margin: 0mm;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+          .barcode-page-wrapper {
+            page-break-after: always !important;
+            break-after: page !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           .print-scale-target {
             transform: translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100}) !important;
           }
+          svg, rect, path {
+            shape-rendering: crispEdges !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+        .barcode-sticker svg {
+          shape-rendering: crispEdges !important;
+          display: block;
+          margin: 0 auto;
         }
       `}</style>
       <div className="print:hidden">
@@ -130,6 +174,53 @@ export default function BarcodeCenterPage() {
         {/* Left Column - Builder & Queue (Not printable) */}
         <div className="xl:col-span-7 space-y-6 print:hidden">
           
+          {/* Hardware Scanner Live Test Box */}
+          <RimalCard className="animate-on-load bg-gradient-to-r from-[#33040D]/5 to-transparent border border-[#33040D]/15">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[15px] font-bold text-[#33040D] flex items-center gap-2">
+                <Scan className="w-4 h-4 text-[#33040D]" /> Hardware Scanner Test (স্ক্যানার টেস্ট করুন)
+              </h2>
+              <span className="text-[11px] font-medium text-gray-500">Scan any tag or type SKU</span>
+            </div>
+            <div className="relative">
+              <input 
+                type="text"
+                value={testScanInput}
+                onChange={(e) => handleTestScan(e.target.value)}
+                placeholder="Click here & scan any barcode with your handheld scanner..."
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#33040D]/20 outline-none"
+              />
+            </div>
+            {testScanResult && (
+              <div className={`mt-3 p-3 rounded-xl border flex items-center justify-between text-xs font-medium ${
+                testScanResult.found 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {testScanResult.found ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-amber-600" />}
+                  <div>
+                    {testScanResult.found ? (
+                      <>
+                        <span className="font-bold">{testScanResult.product.name}</span>
+                        <span className="text-gray-500 ml-2">SKU: {testScanResult.product.sku} | Price: ৳{testScanResult.product.price}</span>
+                      </>
+                    ) : (
+                      <>
+                        Scanned: <span className="font-mono font-bold">"{testScanResult.raw}"</span> (No match in DB)
+                      </>
+                    )}
+                  </div>
+                </div>
+                {testScanResult.found && (
+                  <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold text-[10px]">
+                    ✓ 100% Scannable
+                  </span>
+                )}
+              </div>
+            )}
+          </RimalCard>
+
           {/* Create Product Inline Form */}
           <RimalCard className="animate-on-load bg-gray-50 border border-gray-100">
             <h2 className="text-[16px] font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -297,34 +388,52 @@ export default function BarcodeCenterPage() {
             
             {printQueue.flatMap(item => 
               Array.from({ length: item.qty }).map((_, i) => (
-                <div key={`${item.sku}-${i}`} className="barcode-page-wrapper transform scale-[1.5] origin-top mb-12 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden">
+                <div key={`${item.sku}-${i}`} className="barcode-page-wrapper print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden print:p-0 print:m-0">
                   <div 
-                    className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-200 rounded-md mx-auto print:border-none print:rounded-none box-border relative"
-                    style={{ transform: isRotated ? 'rotate(90deg)' : 'none' }}
+                    className="barcode-sticker w-[1.5in] h-[1in] bg-white border border-gray-200 rounded-md mx-auto print:border-none print:rounded-none box-border relative flex flex-col items-center justify-between py-1 px-1.5 shadow-xs print:shadow-none"
+                    style={{ 
+                      transform: isRotated ? 'rotate(90deg)' : 'none',
+                      backgroundColor: '#ffffff'
+                    }}
                   >
                     <div 
-                      className="w-full h-full flex flex-col items-center justify-center absolute inset-0 px-1 print-scale-target"
-                      style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px)` }}
+                      className="w-full h-full flex flex-col items-center justify-between text-center print-scale-target"
+                      style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100})` }}
                     >
-                      <div className="w-full text-center">
-                        <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
+                      {/* Top Header: Brand & Product Name */}
+                      <div className="w-full text-center leading-none">
+                        <p className="text-[10px] font-black tracking-wider text-black uppercase truncate">
+                          {item.name || 'RIMAL'}
+                        </p>
+                        <p className="text-[9px] font-bold text-gray-700 leading-tight mt-0.5">
+                          {item.size ? `Size: ${item.size}` : ''} {item.color && item.color !== 'Standard' ? `| ${item.color}` : ''}
+                        </p>
                       </div>
-                      <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                      <div className="w-full flex justify-center mt-0.5">
+
+                      {/* Barcode: High-Contrast, Sharp Code128 with Quiet Zone */}
+                      <div className="w-full flex justify-center items-center my-0.5 bg-white">
                         <Barcode 
                           value={item.sku} 
-                          width={1.3} 
-                          height={22} 
-                          fontSize={10} 
-                          background="transparent"
-                          lineColor="#000"
-                          margin={0}
+                          format="CODE128"
+                          width={1.25} 
+                          height={28} 
+                          fontSize={9} 
+                          displayValue={true}
+                          textMargin={1}
+                          font="monospace"
+                          background="#ffffff"
+                          lineColor="#000000"
+                          margin={4}
                         />
                       </div>
-                      <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
-                        ৳ {item.price} 
-                        <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
-                      </p>
+
+                      {/* Bottom Footer: Price */}
+                      <div className="w-full text-center leading-none pb-0.5">
+                        <p className="text-[12px] font-black text-black leading-none flex items-baseline justify-center gap-1">
+                          <span>৳ {item.price}</span>
+                          <span className="text-[8px] font-bold text-gray-600">(VAT Incl.)</span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
