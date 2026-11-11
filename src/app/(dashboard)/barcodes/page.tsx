@@ -17,10 +17,6 @@ export default function BarcodeCenterPage() {
   const [isAddingDB, setIsAddingDB] = useState(false);
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
-  const [isRotated, setIsRotated] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(16);
-  const [horizontalOffset, setHorizontalOffset] = useState(0);
-  const [scaleOffset, setScaleOffset] = useState(70);
 
   // Form for quick add
   const [newProd, setNewProd] = useState({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
@@ -110,13 +106,6 @@ export default function BarcodeCenterPage() {
 
   return (
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
-      <style>{`
-        @media print {
-          .print-scale-target {
-            transform: translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100}) !important;
-          }
-        }
-      `}</style>
       <div className="print:hidden">
         <RimalTopBar 
           title="Barcode Center" 
@@ -221,60 +210,25 @@ export default function BarcodeCenterPage() {
               ))}
             </div>
 
-            <div className="p-6 bg-white border-t border-gray-100 flex justify-between items-center">
+            <div className="p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wider">Total Labels to Print</p>
-                <p className="text-[28px] font-black text-[#33040D]">{totalLabels}</p>
+                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Total Labels to Print</p>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-[32px] font-black text-[#33040D] leading-none">{totalLabels}</span>
+                  <span className="text-xs font-semibold text-gray-400">stickers</span>
+                </div>
+                <p className="text-[11px] text-green-700 bg-green-50 border border-green-200/60 rounded-md px-2 py-0.5 mt-2 font-medium inline-block">
+                  ✓ Auto-formatted for standard 1.5″ × 1.0″ thermal sticker
+                </p>
               </div>
-              <div className="flex flex-col gap-3 items-end">
-                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Horizontal Offset (Fix Side Gap)</label>
-                  <input 
-                    type="range" 
-                    min="-40" 
-                    max="40" 
-                    value={horizontalOffset} 
-                    onChange={(e) => setHorizontalOffset(Number(e.target.value))} 
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-[10px] text-gray-400">{horizontalOffset}px</span>
-                </div>
-                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Vertical Offset (Fix Top Cut-off)</label>
-                  <input 
-                    type="range" 
-                    min="-20" 
-                    max="20" 
-                    value={verticalOffset} 
-                    onChange={(e) => setVerticalOffset(Number(e.target.value))} 
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-[10px] text-gray-400">{verticalOffset}px</span>
-                </div>
-                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Scale / Zoom (Fix Side Cropping)</label>
-                  <input 
-                    type="range" 
-                    min="50" 
-                    max="100" 
-                    value={scaleOffset} 
-                    onChange={(e) => setScaleOffset(Number(e.target.value))} 
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-[10px] text-gray-400">{scaleOffset}%</span>
-                </div>
-                <label className="flex items-center gap-2 text-[12px] font-bold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">
-                  <input type="checkbox" checked={isRotated} onChange={e => setIsRotated(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#33040D] focus:ring-[#33040D]" />
-                  Rotate 90° (Fix Printer Orientation)
-                </label>
-                <button 
-                  onClick={handlePrint}
-                  disabled={totalLabels === 0}
-                  className="py-4 px-8 bg-[#33040D] disabled:opacity-50 text-white rounded-[16px] font-bold text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center gap-3"
-                >
-                  <Printer className="w-5 h-5" /> Print All Labels
-                </button>
-              </div>
+
+              <button 
+                onClick={handlePrint}
+                disabled={totalLabels === 0}
+                className="w-full sm:w-auto py-3.5 px-8 bg-[#33040D] hover:bg-[#4a0614] disabled:opacity-50 text-white rounded-xl font-bold text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer"
+              >
+                <Printer className="w-5 h-5" /> Print All Labels
+              </button>
             </div>
           </RimalCard>
 
@@ -284,11 +238,11 @@ export default function BarcodeCenterPage() {
         <div className="xl:col-span-5 animate-on-load barcode-print-area">
           <div className="flex justify-between items-center mb-4 print:hidden">
             <h3 className="text-[16px] font-bold text-gray-900">Live Print Preview</h3>
-            <span className="text-[12px] font-bold text-[#33040D] bg-[#33040D]/10 px-3 py-1 rounded-full">Thermal Sticker Layout (1.50" x 1.00")</span>
+            <span className="text-[12px] font-bold text-[#33040D] bg-[#33040D]/10 px-3 py-1 rounded-full">Standard 1.50″ × 1.00″</span>
           </div>
           
-          <div className="bg-gray-100 p-8 rounded-[8px] flex flex-row flex-wrap justify-center gap-4 overflow-y-auto max-h-[842px] print:block print:shadow-none print:bg-white print:border-none print:p-0 print:m-0 print:max-h-none print:overflow-visible">
-            {/* On-screen we show them in a scrollable list, but print styles handle actual printing layout */}
+          <div className="bg-gray-100 p-8 rounded-[8px] flex flex-row flex-wrap justify-center gap-6 overflow-y-auto max-h-[842px] print:block print:shadow-none print:bg-white print:border-none print:p-0 print:m-0 print:max-h-none print:overflow-visible">
+            {/* On-screen preview */}
             {printQueue.length === 0 && (
               <div className="text-center text-gray-500 font-medium py-10 print:hidden">
                 Queue is empty. Add items to preview.
@@ -297,35 +251,43 @@ export default function BarcodeCenterPage() {
             
             {printQueue.flatMap(item => 
               Array.from({ length: item.qty }).map((_, i) => (
-                <div key={`${item.sku}-${i}`} className="barcode-page-wrapper transform scale-[1.5] origin-top mb-12 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden">
-                  <div 
-                    className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-200 rounded-md mx-auto print:border-none print:rounded-none box-border relative"
-                    style={{ transform: isRotated ? 'rotate(90deg)' : 'none' }}
-                  >
-                    <div 
-                      className="w-full h-full flex flex-col items-center justify-center absolute inset-0 px-1 print-scale-target"
-                      style={{ transform: `translate(${horizontalOffset}px, ${verticalOffset}px)` }}
-                    >
-                      <div className="w-full text-center">
-                        <p className="text-[10px] font-bold text-black leading-tight truncate">{item.name}</p>
-                      </div>
-                      <p className="text-[9px] font-medium text-black leading-none mt-0.5">{item.size} / {item.color}</p>
-                      <div className="w-full flex justify-center mt-0.5">
-                        <Barcode 
-                          value={item.sku} 
-                          width={1.3} 
-                          height={22} 
-                          fontSize={10} 
-                          background="transparent"
-                          lineColor="#000"
-                          margin={0}
-                        />
-                      </div>
-                      <p className="text-[14px] font-black text-black leading-none mt-1 flex items-baseline justify-center gap-1">
-                        ৳ {item.price} 
-                        <span className="text-[10px] font-bold leading-none whitespace-nowrap">(VAT Incl.)</span>
-                      </p>
+                <div 
+                  key={`${item.sku}-${i}`} 
+                  className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden"
+                >
+                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex flex-col items-center justify-center p-1 text-center select-none">
+                    
+                    {/* Product Name */}
+                    <p className="text-[9.5px] font-bold text-black leading-tight truncate w-full px-1">
+                      {item.name}
+                    </p>
+
+                    {/* Size & Color */}
+                    <p className="text-[8.5px] font-semibold text-gray-700 leading-none mt-0.5">
+                      {item.size || 'Free Size'}{item.color && item.color !== 'Standard' ? ` / ${item.color}` : ''}
+                    </p>
+
+                    {/* Barcode SVG */}
+                    <div className="w-full flex justify-center items-center my-0.5">
+                      <Barcode 
+                        value={item.sku} 
+                        format="CODE128"
+                        width={1.15} 
+                        height={24} 
+                        fontSize={9} 
+                        font="monospace"
+                        textMargin={1}
+                        background="transparent"
+                        lineColor="#000000"
+                        margin={0}
+                      />
                     </div>
+
+                    {/* Price */}
+                    <p className="text-[12px] font-black text-black leading-none flex items-baseline justify-center gap-1">
+                      ৳ {item.price} 
+                      <span className="text-[8.5px] font-bold text-gray-600">(VAT Incl.)</span>
+                    </p>
                   </div>
                 </div>
               ))
