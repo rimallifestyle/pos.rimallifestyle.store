@@ -63,7 +63,8 @@ export async function getPosProducts(outletId?: string | null) {
     for (const p of products) {
       for (const v of (p as any).variants) {
         const stockItem = inventory.find((i: any) => i.sku === v.sku);
-        const stock = stockItem ? stockItem.quantity : 0;
+        // Use inventory quantity if found, otherwise fall back to variant's own quantity field
+        const stock = stockItem ? stockItem.quantity : (v.quantity || 0);
         
         const hasColor = v.color && v.color !== 'Standard' && v.color !== 'Default' && v.color.trim() !== '';
         const hasSize = v.size && v.size.trim() !== '';

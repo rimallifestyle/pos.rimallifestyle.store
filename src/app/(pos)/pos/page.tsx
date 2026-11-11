@@ -18,6 +18,7 @@ import NotificationBell from '@/components/rimal-ui/NotificationBell';
 export default function POSPage() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeCategory, setActiveCategory] = useState('All');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
@@ -166,103 +167,112 @@ export default function POSPage() {
       }
       return [...prev, { ...product, qty: 1 }];
     });
+    toast.success(`✓ ${product.name} added`, { duration: 1500, position: 'bottom-center' });
   };
 
-  // Lookup a product by SKU and add to cart (used by barcode scan + search Enter)
-  const handleSkuLookup = (sku: string) => {
-    const trimmed = sku.trim();
-    if (!trimmed || trimmed.length < 2) return false;
+  // ─── Barcode / SKU Lookup ───
+  // Use a ref to keep the latest products array available in all event handlers
+  // without needing to re-attach listeners on every products change.
+  const productsRef = useRef<any[]>([]);
+  productsRef.current = products;
 
-    if (trimmed.toUpperCase().startsWith('INV-')) {
-      setReturnInvoiceId(trimmed.toUpperCase());
+  const findProductBySku = (raw: string): any | null => {
+    const sku = raw.trim();
+    if (!sku || sku.length < 2) return null;
+    const prods = productsRef.current;
+    // 1. Exact match (case-insensitive)
+    let match = prods.find(p => p.sku.toLowerCase() === sku.toLowerCase());
+    if (match) return match;
+    // 2. Scanned value contains a known SKU (scanner added prefix/suffix)
+    match = prods.find(p => sku.toLowerCase().includes(p.sku.toLowerCase()));
+    if (match) return match;
+    // 3. A known SKU contains the scanned value
+    match = prods.find(p => p.sku.toLowerCase().includes(sku.toLowerCase()));
+    return match || null;
+  };
+
+  // Handle Enter key in the search box — this is the PRIMARY barcode handler
+  // because the autoFocus input captures all scanner keystrokes.
+  const handleSearchEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+
+    // Read the DOM value directly — this is always current even if React
+    // hasn't re-rendered yet from the scanner's rapid onChange calls.
+    const raw = searchInputRef.current?.value || '';
+    if (!raw.trim()) return;
+
+    if (raw.toUpperCase().trim().startsWith('INV-')) {
+      setReturnInvoiceId(raw.toUpperCase().trim());
       setShowReturnModal(true);
       setSearchQuery('');
-      return true;
+      if (searchInputRef.current) searchInputRef.current.value = '';
+      return;
     }
 
-    // Try exact match first (case-insensitive)
-    let match = products.find(p => p.sku.toLowerCase() === trimmed.toLowerCase());
-
-    // If no exact match, try matching the SKU as a substring (some scanners add prefix/suffix)
-    if (!match) {
-      match = products.find(p => trimmed.toLowerCase().includes(p.sku.toLowerCase()));
-    }
-    // Also try if the scanned value is contained within any product SKU
-    if (!match) {
-      match = products.find(p => p.sku.toLowerCase().includes(trimmed.toLowerCase()));
-    }
-
+    const match = findProductBySku(raw);
     if (match) {
       handleAddToCart(match);
       setSearchQuery('');
-      return true;
+      if (searchInputRef.current) searchInputRef.current.value = '';
+    } else {
+      // If not found by SKU, check if there's exactly one product visible
+      const q = raw.trim().toLowerCase();
+      const visible = productsRef.current.filter(p =>
+        p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q)
+      );
+      if (visible.length === 1) {
+        handleAddToCart(visible[0]);
+        setSearchQuery('');
+        if (searchInputRef.current) searchInputRef.current.value = '';
+      } else {
+        toast.error(`No product found for: "${raw.trim()}"`);
+      }
     }
-
-    return false;
   };
 
-  // Global Barcode Scanner Listener
+  // Global keydown listener — catches barcode scans when search input
+  // is NOT focused (e.g. user clicked elsewhere).
   useEffect(() => {
     let barcode = '';
-    let lastKeyTime = Date.now();
+    let lastKeyTime = 0;
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is in a modal input (phone, discount, etc.) — but allow the POS search box
-      if (
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA'
-      ) {
-        const inputId = (document.activeElement as HTMLInputElement)?.id;
-        // Only allow barcode capture if focused on the POS search box or no specific input
-        if (inputId && inputId !== 'pos-search-input') {
-          return; // Don't intercept typing in other inputs (phone, discount, etc.)
-        }
-      }
+      // If the POS search input is focused, let handleSearchEnter deal with it.
+      if (document.activeElement === searchInputRef.current) return;
 
-      const currentTime = Date.now();
+      // If user is in another input (phone, discount, modal), ignore.
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-      // If time between keystrokes is > 300ms, it's a new sequence. Reset.
-      // USB barcode scanners typically send all chars within 50-200ms total,
-      // but individual char gaps can be 10-80ms. 300ms is safe for all scanners.
-      if (currentTime - lastKeyTime > 300) {
-        barcode = '';
-      }
+      const now = Date.now();
+      if (now - lastKeyTime > 500) barcode = '';
 
-      // Add printable character
-      if (e.key.length === 1) {
-        barcode += e.key;
-      }
+      if (e.key.length === 1) barcode += e.key;
 
-      // When Enter is pressed, try to match the accumulated barcode
       if (e.key === 'Enter' && barcode.length >= 2) {
         e.preventDefault();
-        e.stopPropagation();
 
-        const found = handleSkuLookup(barcode);
-        if (!found) {
-          // Also try what's currently in the search box (scanner might have typed there)
-          const searchInput = document.getElementById('pos-search-input') as HTMLInputElement;
-          const searchVal = searchInput?.value || '';
-          if (searchVal.trim().length >= 2) {
-            const found2 = handleSkuLookup(searchVal);
-            if (!found2) {
-              toast.error(`No product found for barcode: "${barcode}"`);
-            }
+        if (barcode.toUpperCase().startsWith('INV-')) {
+          setReturnInvoiceId(barcode.toUpperCase());
+          setShowReturnModal(true);
+        } else {
+          const match = findProductBySku(barcode);
+          if (match) {
+            handleAddToCart(match);
           } else {
             toast.error(`No product found for barcode: "${barcode}"`);
           }
-          setSearchQuery('');
         }
-
         barcode = '';
       }
 
-      lastKeyTime = currentTime;
+      lastKeyTime = now;
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [products]);
+  }, []); // No dependencies — uses productsRef which is always current
 
   const updateCartQty = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
@@ -422,28 +432,13 @@ export default function POSPage() {
               <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
             </div>
             <input
+              ref={searchInputRef}
               id="pos-search-input"
               type="text"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
-                  e.preventDefault();
-                  const found = handleSkuLookup(searchQuery);
-                  if (!found) {
-                    // Not found by SKU, check if exactly one product is visible in filtered list
-                    const visible = products.filter(p => {
-                      const q = searchQuery.toLowerCase();
-                      return p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q);
-                    });
-                    if (visible.length === 1) {
-                      handleAddToCart(visible[0]);
-                      setSearchQuery('');
-                    }
-                  }
-                }
-              }}
+              onKeyDown={handleSearchEnter}
               className="block w-full pl-10 md:pl-12 pr-12 md:pr-4 py-3 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[13px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
               placeholder="Scan barcode or search..."
             />
