@@ -17,6 +17,23 @@ export default function BarcodeCenterPage() {
   const [isAddingDB, setIsAddingDB] = useState(false);
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
+  const [orientation, setOrientation] = useState<'normal' | 'rotate90' | 'rotate270'>('normal');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rimal_barcode_orientation');
+      if (saved === 'normal' || saved === 'rotate90' || saved === 'rotate270') {
+        setOrientation(saved);
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleOrientationChange = (val: 'normal' | 'rotate90' | 'rotate270') => {
+    setOrientation(val);
+    try {
+      localStorage.setItem('rimal_barcode_orientation', val);
+    } catch (e) {}
+  };
 
   // Form for quick add
   const [newProd, setNewProd] = useState({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
@@ -210,25 +227,74 @@ export default function BarcodeCenterPage() {
               ))}
             </div>
 
-            <div className="p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Total Labels to Print</p>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-[32px] font-black text-[#33040D] leading-none">{totalLabels}</span>
-                  <span className="text-xs font-semibold text-gray-400">stickers</span>
+            <div className="p-6 bg-white border-t border-gray-100 flex flex-col gap-4">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div>
+                  <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Total Labels</p>
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <span className="text-[32px] font-black text-[#33040D] leading-none">{totalLabels}</span>
+                    <span className="text-xs font-semibold text-gray-400">stickers</span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-green-700 bg-green-50 border border-green-200/60 rounded-md px-2 py-0.5 mt-2 font-medium inline-block">
-                  ✓ Auto-formatted for standard 1.5″ × 1.0″ thermal sticker
-                </p>
+
+                {/* Print Direction / Orientation Toggle */}
+                <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+                    Print Direction (প্রিন্ট দিক):
+                  </span>
+                  <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleOrientationChange('normal')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        orientation === 'normal'
+                          ? 'bg-[#33040D] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      ↔ Normal (0°)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOrientationChange('rotate90')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        orientation === 'rotate90'
+                          ? 'bg-[#33040D] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      ↻ Rotate 90°
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOrientationChange('rotate270')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        orientation === 'rotate270'
+                          ? 'bg-[#33040D] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      ↺ Rotate -90°
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handlePrint}
+                  disabled={totalLabels === 0}
+                  className="w-full lg:w-auto py-3.5 px-8 bg-[#33040D] hover:bg-[#4a0614] disabled:opacity-50 text-white rounded-xl font-bold text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer"
+                >
+                  <Printer className="w-5 h-5" /> Print All Labels
+                </button>
               </div>
 
-              <button 
-                onClick={handlePrint}
-                disabled={totalLabels === 0}
-                className="w-full sm:w-auto py-3.5 px-8 bg-[#33040D] hover:bg-[#4a0614] disabled:opacity-50 text-white rounded-xl font-bold text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 cursor-pointer"
-              >
-                <Printer className="w-5 h-5" /> Print All Labels
-              </button>
+              {/* Helpful Hint banner */}
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-900 font-medium">
+                <span className="font-bold text-amber-700">💡 টিপস:</span>
+                <span>
+                  প্রিন্টারে যদি স্টিকার ৯০° বাঁকা বা লম্বালম্বি আসে, তাহলে ওপরের <strong>'↻ Rotate 90°'</strong> বাটনে ক্লিক করে প্রিন্ট দিন অথবা Chrome প্রিন্ট উইন্ডোতে <strong>Layout: Portrait / Landscape</strong> পরিবর্তন করুন।
+                </span>
+              </div>
             </div>
           </RimalCard>
 
@@ -238,7 +304,9 @@ export default function BarcodeCenterPage() {
         <div className="xl:col-span-5 animate-on-load barcode-print-area">
           <div className="flex justify-between items-center mb-4 print:hidden">
             <h3 className="text-[16px] font-bold text-gray-900">Live Print Preview</h3>
-            <span className="text-[12px] font-bold text-[#33040D] bg-[#33040D]/10 px-3 py-1 rounded-full">Standard 1.50″ × 1.00″</span>
+            <span className="text-[12px] font-bold text-[#33040D] bg-[#33040D]/10 px-3 py-1 rounded-full">
+              Standard 1.50″ × 1.00″ {orientation !== 'normal' ? `(${orientation === 'rotate90' ? '+90°' : '-90°'})` : ''}
+            </span>
           </div>
           
           <div className="bg-gray-100 p-8 rounded-[8px] flex flex-row flex-wrap justify-center gap-6 overflow-y-auto max-h-[842px] print:block print:shadow-none print:bg-white print:border-none print:p-0 print:m-0 print:max-h-none print:overflow-visible">
@@ -255,39 +323,52 @@ export default function BarcodeCenterPage() {
                   key={`${item.sku}-${i}`} 
                   className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden"
                 >
-                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex flex-col items-center justify-center p-1 text-center select-none">
+                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none">
                     
-                    {/* Product Name */}
-                    <p className="text-[9.5px] font-bold text-black leading-tight truncate w-full px-1">
-                      {item.name}
-                    </p>
+                    <div 
+                      className="w-[1.5in] h-[1in] flex flex-col items-center justify-center p-1 text-center"
+                      style={{
+                        transform: orientation === 'rotate90' 
+                          ? 'rotate(90deg) scale(0.66)' 
+                          : orientation === 'rotate270' 
+                          ? 'rotate(-90deg) scale(0.66)' 
+                          : 'none',
+                        transformOrigin: 'center center'
+                      }}
+                    >
+                      {/* Product Name */}
+                      <p className="text-[9.5px] font-bold text-black leading-tight truncate w-full px-1">
+                        {item.name}
+                      </p>
 
-                    {/* Size & Color */}
-                    <p className="text-[8.5px] font-semibold text-gray-700 leading-none mt-0.5">
-                      {item.size || 'Free Size'}{item.color && item.color !== 'Standard' ? ` / ${item.color}` : ''}
-                    </p>
+                      {/* Size & Color */}
+                      <p className="text-[8.5px] font-semibold text-gray-700 leading-none mt-0.5">
+                        {item.size || 'Free Size'}{item.color && item.color !== 'Standard' ? ` / ${item.color}` : ''}
+                      </p>
 
-                    {/* Barcode SVG */}
-                    <div className="w-full flex justify-center items-center my-0.5">
-                      <Barcode 
-                        value={item.sku} 
-                        format="CODE128"
-                        width={1.15} 
-                        height={24} 
-                        fontSize={9} 
-                        font="monospace"
-                        textMargin={1}
-                        background="transparent"
-                        lineColor="#000000"
-                        margin={0}
-                      />
+                      {/* Barcode SVG */}
+                      <div className="w-full flex justify-center items-center my-0.5">
+                        <Barcode 
+                          value={item.sku} 
+                          format="CODE128"
+                          width={1.15} 
+                          height={24} 
+                          fontSize={9} 
+                          font="monospace"
+                          textMargin={1}
+                          background="transparent"
+                          lineColor="#000000"
+                          margin={0}
+                        />
+                      </div>
+
+                      {/* Price */}
+                      <p className="text-[12px] font-black text-black leading-none flex items-baseline justify-center gap-1">
+                        ৳ {item.price} 
+                        <span className="text-[8.5px] font-bold text-gray-600">(VAT Incl.)</span>
+                      </p>
                     </div>
 
-                    {/* Price */}
-                    <p className="text-[12px] font-black text-black leading-none flex items-baseline justify-center gap-1">
-                      ৳ {item.price} 
-                      <span className="text-[8.5px] font-bold text-gray-600">(VAT Incl.)</span>
-                    </p>
                   </div>
                 </div>
               ))
