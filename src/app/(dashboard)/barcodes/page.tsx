@@ -18,9 +18,10 @@ export default function BarcodeCenterPage() {
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [isRotated, setIsRotated] = useState(false);
-  const [verticalOffset, setVerticalOffset] = useState(16);
+  const [verticalOffset, setVerticalOffset] = useState(0);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
-  const [scaleOffset, setScaleOffset] = useState(90);
+  const [scaleOffset, setScaleOffset] = useState(95);
+  const [barcodeWidth, setBarcodeWidth] = useState(0.82);
 
   // Full Barcode Only Mode (no text, no price, no sku)
   const [barcodeOnly, setBarcodeOnly] = useState(true);
@@ -135,8 +136,33 @@ export default function BarcodeCenterPage() {
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
       <style>{`
         @media print {
+          @page {
+            size: 1.5in 1in;
+            margin: 0;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .barcode-page-wrapper {
+            width: 1.5in !important;
+            height: 1in !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+          }
+          .barcode-sticker {
+            width: 1.5in !important;
+            height: 1in !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+          }
           .print-scale-target {
             transform: translate(${horizontalOffset}px, ${verticalOffset}px) scale(${scaleOffset / 100}) !important;
+            transform-origin: center center !important;
           }
           svg, rect, path {
             shape-rendering: crispEdges !important;
@@ -145,6 +171,11 @@ export default function BarcodeCenterPage() {
           }
         }
         .barcode-sticker svg {
+          max-width: 86% !important;
+          max-height: 85% !important;
+          height: auto !important;
+          display: block;
+          margin: 0 auto;
           shape-rendering: crispEdges !important;
         }
       `}</style>
@@ -306,6 +337,19 @@ export default function BarcodeCenterPage() {
               </div>
               <div className="flex flex-col gap-3 items-end">
                 <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
+                  <label className="text-[11px] font-bold text-gray-500 uppercase">Barcode Bar Width (দাগের ঘনত্ব)</label>
+                  <input 
+                    type="range" 
+                    min="0.65" 
+                    max="1.05" 
+                    step="0.02"
+                    value={barcodeWidth} 
+                    onChange={(e) => setBarcodeWidth(Number(e.target.value))} 
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <span className="text-[10px] text-gray-400">{barcodeWidth}px (কমিয়ে সাইডে ফাঁকা মার্জিন রাখুন)</span>
+                </div>
+                <div className="flex flex-col items-end gap-1 w-full max-w-[200px]">
                   <label className="text-[11px] font-bold text-gray-500 uppercase">Horizontal Offset (Fix Side Gap)</label>
                   <input 
                     type="range" 
@@ -321,8 +365,8 @@ export default function BarcodeCenterPage() {
                   <label className="text-[11px] font-bold text-gray-500 uppercase">Vertical Offset (Fix Top Cut-off)</label>
                   <input 
                     type="range" 
-                    min="-20" 
-                    max="20" 
+                    min="-30" 
+                    max="30" 
                     value={verticalOffset} 
                     onChange={(e) => setVerticalOffset(Number(e.target.value))} 
                     className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer"
@@ -412,8 +456,8 @@ export default function BarcodeCenterPage() {
                           <Barcode 
                             value={item.sku} 
                             format="CODE128"
-                            width={1.25} 
-                            height={showSkuUnderBarcode ? 48 : 58} 
+                            width={barcodeWidth} 
+                            height={showSkuUnderBarcode ? 48 : 62} 
                             fontSize={10} 
                             displayValue={showSkuUnderBarcode}
                             textMargin={2}
@@ -433,7 +477,7 @@ export default function BarcodeCenterPage() {
                             <Barcode 
                               value={item.sku} 
                               format="CODE128"
-                              width={1.2} 
+                              width={Math.min(barcodeWidth, 0.82)} 
                               height={22} 
                               fontSize={10} 
                               displayValue={true}
