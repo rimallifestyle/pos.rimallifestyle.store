@@ -28,6 +28,7 @@ export async function searchProducts(query: string) {
           price: v.price,
           costPrice: v.costPrice,
           category: (p as any).category,
+          subCategory: (p as any).subCategory || '',
         });
       }
     }
@@ -56,6 +57,7 @@ export async function getAllProducts() {
           price: v.price,
           costPrice: v.costPrice,
           category: (p as any).category,
+          subCategory: (p as any).subCategory || '',
         });
       }
     }
@@ -98,6 +100,7 @@ export async function getProductSummaries() {
         sku: p.variants?.[0]?.sku || 'N/A',
         name: p.title,
         category: p.category,
+        subCategory: p.subCategory || '',
         price: `৳ ${p.variants?.[0]?.price || 0}`,
         stock: totalStock,
         status: status,
@@ -127,6 +130,7 @@ export async function createProductWithVariants(data: any) {
       slug: data.slug,
       description: data.description,
       category: data.category,
+      subCategory: data.subCategory || '',
       imageUrl: data.imageUrl,
       isActive: data.isActive !== undefined ? data.isActive : true,
       productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),
@@ -210,6 +214,7 @@ export async function updateProductWithVariants(id: string, data: any) {
       slug: data.slug,
       description: data.description,
       category: data.category,
+      subCategory: data.subCategory || '',
       imageUrl: data.imageUrl,
       isActive: data.isActive !== undefined ? data.isActive : true,
       productType: data.productType || (data.variants?.length > 1 ? 'variable' : 'simple'),

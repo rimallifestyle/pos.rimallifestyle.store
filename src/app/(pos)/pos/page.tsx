@@ -168,56 +168,95 @@ export default function POSPage() {
     });
   };
 
+  // Lookup a product by SKU and add to cart (used by barcode scan + search Enter)
+  const handleSkuLookup = (sku: string) => {
+    const trimmed = sku.trim();
+    if (!trimmed || trimmed.length < 2) return false;
+
+    if (trimmed.toUpperCase().startsWith('INV-')) {
+      setReturnInvoiceId(trimmed.toUpperCase());
+      setShowReturnModal(true);
+      setSearchQuery('');
+      return true;
+    }
+
+    // Try exact match first (case-insensitive)
+    let match = products.find(p => p.sku.toLowerCase() === trimmed.toLowerCase());
+
+    // If no exact match, try matching the SKU as a substring (some scanners add prefix/suffix)
+    if (!match) {
+      match = products.find(p => trimmed.toLowerCase().includes(p.sku.toLowerCase()));
+    }
+    // Also try if the scanned value is contained within any product SKU
+    if (!match) {
+      match = products.find(p => p.sku.toLowerCase().includes(trimmed.toLowerCase()));
+    }
+
+    if (match) {
+      handleAddToCart(match);
+      setSearchQuery('');
+      return true;
+    }
+
+    return false;
+  };
+
   // Global Barcode Scanner Listener
   useEffect(() => {
     let barcode = '';
     let lastKeyTime = Date.now();
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is inside an input/textarea and it's not the search box
+      // Skip if user is in a modal input (phone, discount, etc.) — but allow the POS search box
       if (
-        document.activeElement?.tagName === 'INPUT' || 
+        document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA'
       ) {
-        const inputId = document.activeElement?.id;
-        // If it's a general input, we might still want to capture fast scans, but it's safer to only allow if it's the search box or not focused on any form element.
-        // Barcode scanners are fast (< 30ms between keystrokes).
+        const inputId = (document.activeElement as HTMLInputElement)?.id;
+        // Only allow barcode capture if focused on the POS search box or no specific input
+        if (inputId && inputId !== 'pos-search-input') {
+          return; // Don't intercept typing in other inputs (phone, discount, etc.)
+        }
       }
-      
+
       const currentTime = Date.now();
-      
-      // If time between keystrokes is > 50ms, it's likely manual typing. Reset barcode string.
-      if (currentTime - lastKeyTime > 50) {
+
+      // If time between keystrokes is > 300ms, it's a new sequence. Reset.
+      // USB barcode scanners typically send all chars within 50-200ms total,
+      // but individual char gaps can be 10-80ms. 300ms is safe for all scanners.
+      if (currentTime - lastKeyTime > 300) {
         barcode = '';
       }
-      
-      // Add character
+
+      // Add printable character
       if (e.key.length === 1) {
         barcode += e.key;
       }
-      
-      // If Enter is pressed, and we accumulated a barcode fast enough
-      if (e.key === 'Enter' && barcode.length >= 3) {
-        if (barcode.toUpperCase().startsWith('INV-')) {
-          setReturnInvoiceId(barcode.toUpperCase());
-          setShowReturnModal(true);
-          setSearchQuery('');
-        } else {
-          const exactMatch = products.find(p => p.sku.toLowerCase() === barcode.toLowerCase());
-          
-          if (exactMatch) {
-            handleAddToCart(exactMatch);
-            setSearchQuery(''); // Clear the input field in case it was focused
+
+      // When Enter is pressed, try to match the accumulated barcode
+      if (e.key === 'Enter' && barcode.length >= 2) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const found = handleSkuLookup(barcode);
+        if (!found) {
+          // Also try what's currently in the search box (scanner might have typed there)
+          const searchInput = document.getElementById('pos-search-input') as HTMLInputElement;
+          const searchVal = searchInput?.value || '';
+          if (searchVal.trim().length >= 2) {
+            const found2 = handleSkuLookup(searchVal);
+            if (!found2) {
+              toast.error(`No product found for barcode: "${barcode}"`);
+            }
           } else {
-            toast.error(`No product found for barcode: ${barcode}`);
-            setSearchQuery('');
+            toast.error(`No product found for barcode: "${barcode}"`);
           }
+          setSearchQuery('');
         }
-        
+
         barcode = '';
-        e.preventDefault(); // Prevent accidental form submissions
       }
-      
+
       lastKeyTime = currentTime;
     };
 
@@ -383,10 +422,28 @@ export default function POSPage() {
               <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
             </div>
             <input
+              id="pos-search-input"
               type="text"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
+                  e.preventDefault();
+                  const found = handleSkuLookup(searchQuery);
+                  if (!found) {
+                    // Not found by SKU, check if exactly one product is visible in filtered list
+                    const visible = products.filter(p => {
+                      const q = searchQuery.toLowerCase();
+                      return p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q);
+                    });
+                    if (visible.length === 1) {
+                      handleAddToCart(visible[0]);
+                      setSearchQuery('');
+                    }
+                  }
+                }
+              }}
               className="block w-full pl-10 md:pl-12 pr-12 md:pr-4 py-3 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[13px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
               placeholder="Scan barcode or search..."
             />

@@ -85,6 +85,7 @@ export async function getPosProducts(outletId?: string | null) {
           price: v.price,
           stock: stock,
           category: p.category,
+          subCategory: (p as any).subCategory || '',
           img: p.imageUrl || 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=150&q=80'
         });
       }

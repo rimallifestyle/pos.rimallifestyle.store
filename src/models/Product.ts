@@ -15,6 +15,7 @@ export interface IProduct extends Document {
   slug: string;
   description?: string;
   category: string;
+  subCategory?: string;
   imageUrl?: string;
   isActive: boolean;
   productType?: 'simple' | 'variable';
@@ -41,6 +42,7 @@ const ProductSchema: Schema = new Schema(
     slug: { type: String, required: true, unique: true },
     description: { type: String },
     category: { type: String, required: true },
+    subCategory: { type: String, default: '' },
     imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
     productType: { type: String, enum: ['simple', 'variable'], default: 'variable' },

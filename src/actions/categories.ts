@@ -17,8 +17,25 @@ export async function getCategories() {
 export async function createCategory(data: { name: string, parentId?: string }) {
   try {
     await connectToDatabase();
+    const cleanName = data.name.trim();
+    if (!cleanName) {
+      return { success: false, error: 'Category name is required' };
+    }
+
+    const parentId = data.parentId && data.parentId !== 'null' && data.parentId !== '' ? data.parentId : null;
+
+    // Check for duplicate category name under the same parent
+    const duplicate = await Category.findOne({
+      name: { $regex: new RegExp(`^${cleanName}$`, 'i') },
+      parentId: parentId
+    });
+
+    if (duplicate) {
+      return { success: false, error: `Category "${cleanName}" already exists here.` };
+    }
+
     // basic slug generation
-    let slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    let slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     
     // check if slug exists, append random if needed
     const existing = await Category.findOne({ slug });
@@ -27,15 +44,28 @@ export async function createCategory(data: { name: string, parentId?: string }) 
     }
 
     const newCategory = new Category({
-      name: data.name,
+      name: cleanName,
       slug: slug,
-      parentId: data.parentId || null
+      parentId: parentId
     });
     
     await newCategory.save();
     return { success: true, category: JSON.parse(JSON.stringify(newCategory)) };
   } catch (error: any) {
     console.error('Failed to create category:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCategory(id: string) {
+  try {
+    await connectToDatabase();
+    // promote children to top-level if parent is deleted
+    await Category.updateMany({ parentId: id }, { $set: { parentId: null } });
+    await Category.findByIdAndDelete(id);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to delete category:', error);
     return { success: false, error: error.message };
   }
 }
