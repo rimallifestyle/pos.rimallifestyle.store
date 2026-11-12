@@ -123,6 +123,18 @@ export default function BarcodeCenterPage() {
 
   return (
     <div ref={containerRef} className="max-w-[1600px] mx-auto pb-16 font-sans print:pb-0 print:m-0 print:max-w-none">
+      <style>{`
+        @media print {
+          @page {
+            size: portrait !important;
+            margin: 0 !important;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+        }
+      `}</style>
       <div className="print:hidden">
         <RimalTopBar 
           title="Barcode Center" 
@@ -235,12 +247,16 @@ export default function BarcodeCenterPage() {
                     <span className="text-[32px] font-black text-[#33040D] leading-none">{totalLabels}</span>
                     <span className="text-xs font-semibold text-gray-400">stickers</span>
                   </div>
+                  <p className="text-[11px] text-green-700 bg-green-50 border border-green-200/80 rounded-md px-2 py-0.5 mt-2 font-bold inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Enforced: Portrait Mode (No Landscape)
+                  </p>
                 </div>
 
                 {/* Print Direction / Orientation Toggle */}
                 <div className="flex flex-col gap-1.5 w-full sm:w-auto">
                   <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-                    Print Direction (প্রিন্ট দিক):
+                    Print Layout:
                   </span>
                   <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
                     <button
@@ -252,7 +268,7 @@ export default function BarcodeCenterPage() {
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      ↔ Normal (0°)
+                      📄 Portrait (Default)
                     </button>
                     <button
                       type="button"
@@ -264,17 +280,6 @@ export default function BarcodeCenterPage() {
                       }`}
                     >
                       ↻ Rotate 90°
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOrientationChange('rotate270')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        orientation === 'rotate270'
-                          ? 'bg-[#33040D] text-white shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      ↺ Rotate -90°
                     </button>
                   </div>
                 </div>
@@ -289,10 +294,10 @@ export default function BarcodeCenterPage() {
               </div>
 
               {/* Helpful Hint banner */}
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-900 font-medium">
-                <span className="font-bold text-amber-700">💡 টিপস:</span>
+              <div className="flex items-center gap-2 p-2.5 bg-green-50/80 border border-green-200/60 rounded-xl text-xs text-green-900 font-medium">
+                <span className="font-bold text-green-700">✓ Portrait Ready:</span>
                 <span>
-                  প্রিন্টারে যদি স্টিকার ৯০° বাঁকা বা লম্বালম্বি আসে, তাহলে ওপরের <strong>'↻ Rotate 90°'</strong> বাটনে ক্লিক করে প্রিন্ট দিন অথবা Chrome প্রিন্ট উইন্ডোতে <strong>Layout: Portrait / Landscape</strong> পরিবর্তন করুন।
+                  প্রিন্ট উইন্ডো স্বয়ংক্রিয়ভাবে <strong>Portrait</strong> মোডে ওপেন হবে (কোনো Landscape সিলেক্ট হবে না)।
                 </span>
               </div>
             </div>

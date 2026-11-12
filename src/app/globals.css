@@ -166,7 +166,7 @@ body {
   }
 
   @page {
-    size: 1.5in 1in;
-    margin: 0;
+    size: portrait !important;
+    margin: 0 !important;
   }
 }
