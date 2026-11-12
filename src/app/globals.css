@@ -137,8 +137,18 @@ body {
     display: block !important;
   }
   .barcode-page-wrapper {
-    page-break-after: always;
-    break-after: page;
+    width: 100% !important;
+    min-height: 1in !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
   }
   .barcode-page-wrapper:last-child {
     page-break-after: auto !important;
@@ -147,15 +157,18 @@ body {
   .barcode-sticker {
     width: 1.5in !important;
     height: 1in !important;
-    overflow: hidden;
-    page-break-inside: avoid;
+    max-width: 1.5in !important;
+    max-height: 1in !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
     display: flex !important;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column !important;
+    align-items: center !important;
     justify-content: center !important;
-    padding: 1mm !important;
-    box-sizing: border-box;
-    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
+    text-align: center !important;
   }
   .barcode-sticker svg {
     max-width: 96% !important;

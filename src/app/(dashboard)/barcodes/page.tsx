@@ -132,6 +132,54 @@ export default function BarcodeCenterPage() {
           html, body {
             margin: 0 !important;
             padding: 0 !important;
+            background: #fff !important;
+          }
+          .barcode-print-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .barcode-page-wrapper {
+            width: 100% !important;
+            min-height: 1in !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            box-sizing: border-box !important;
+          }
+          .barcode-page-wrapper:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          .barcode-sticker {
+            width: 1.5in !important;
+            height: 1in !important;
+            max-width: 1.5in !important;
+            max-height: 1in !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+            text-align: center !important;
+          }
+          .barcode-sticker svg {
+            max-width: 96% !important;
+            height: auto !important;
+            display: block !important;
+            margin: 0 auto !important;
+            shape-rendering: crispEdges !important;
           }
         }
       `}</style>
@@ -314,7 +362,7 @@ export default function BarcodeCenterPage() {
             </span>
           </div>
           
-          <div className="bg-gray-100 p-8 rounded-[8px] flex flex-row flex-wrap justify-center gap-6 overflow-y-auto max-h-[842px] print:block print:shadow-none print:bg-white print:border-none print:p-0 print:m-0 print:max-h-none print:overflow-visible">
+          <div className="bg-gray-100 p-8 rounded-[8px] flex flex-row flex-wrap justify-center gap-6 overflow-y-auto max-h-[842px] print:block print:shadow-none print:bg-white print:border-none print:p-0 print:m-0 print:max-h-none print:overflow-visible print:w-full">
             {/* On-screen preview */}
             {printQueue.length === 0 && (
               <div className="text-center text-gray-500 font-medium py-10 print:hidden">
@@ -326,12 +374,12 @@ export default function BarcodeCenterPage() {
               Array.from({ length: item.qty }).map((_, i) => (
                 <div 
                   key={`${item.sku}-${i}`} 
-                  className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-[1.5in] print:h-[1in] print:flex print:items-center print:justify-center print:overflow-hidden"
+                  className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-full print:min-h-[1in] print:flex print:items-center print:justify-center print:mx-auto print:overflow-hidden"
                 >
-                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none">
+                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none print:mx-auto">
                     
                     <div 
-                      className="w-[1.5in] h-[1in] flex flex-col items-center justify-center p-1 text-center"
+                      className="w-full h-full flex flex-col items-center justify-center px-1 py-0.5 text-center box-border"
                       style={{
                         transform: orientation === 'rotate90' 
                           ? 'rotate(90deg) scale(0.66)' 
