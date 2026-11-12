@@ -19,6 +19,7 @@ export default function POSPage() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
@@ -64,33 +65,46 @@ export default function POSPage() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const elements = containerRef.current.querySelectorAll('.animate-on-load');
-    gsap.fromTo(elements, { y: 20, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.05, duration: 0.5, ease: 'power3.out' });
     async function loadData() {
-      const [data, settingsData, tiersData, contextData] = await Promise.all([
-        getPosProducts(), 
-        getPosSettings(), 
-        getMembershipTiers(),
-        getPosContext()
-      ]);
-      setProducts(data);
-      
-      const cats = Array.from(new Set<string>(data.map((p: any) => p.category as string)));
-      setCategories(['All', ...cats]);
+      try {
+        setIsLoading(true);
+        const [data, settingsData, tiersData, contextData] = await Promise.all([
+          getPosProducts(), 
+          getPosSettings(), 
+          getMembershipTiers(),
+          getPosContext()
+        ]);
+        if (data && Array.isArray(data)) {
+          setProducts(data);
+          const cats = Array.from(new Set<string>(data.map((p: any) => p.category as string)));
+          setCategories(['All', ...cats]);
+        }
 
-      if (settingsData) {
-        setPosSettings(settingsData);
-      }
-      if (tiersData) {
-        setMembershipTiers(tiersData);
-      }
-      if (contextData) {
-        setPosContext(contextData as any);
+        if (settingsData) {
+          setPosSettings(settingsData);
+        }
+        if (tiersData) {
+          setMembershipTiers(tiersData);
+        }
+        if (contextData) {
+          setPosContext(contextData as any);
+        }
+      } catch (err) {
+        console.error('Failed to load initial POS data:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !containerRef.current) return;
+    const elements = containerRef.current.querySelectorAll('.animate-on-load');
+    if (elements.length > 0) {
+      gsap.fromTo(elements, { y: 20, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.05, duration: 0.5, ease: 'power3.out' });
+    }
+  }, [isLoading]);
 
   // Sync state with local storage to prevent data loss on reload
   useEffect(() => {
@@ -446,6 +460,123 @@ export default function POSPage() {
       toast.error('Failed to save sale. Please try again.');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full lg:h-[calc(100vh-80px)] flex flex-col lg:flex-row gap-4 lg:gap-6 font-sans relative overflow-hidden animate-pulse">
+        {/* Floating Loading Pill Badge */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-gray-200/80 flex items-center gap-2 text-[12px] font-bold text-[#33040D]">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#33040D]" />
+          <span>Loading POS Products...</span>
+        </div>
+
+        {/* Left Column Skeleton */}
+        <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full">
+          {/* Top Header / Search Skeleton */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4 md:mb-6">
+            <div className="relative flex-1 w-full h-[48px] md:h-[56px] bg-white rounded-xl md:rounded-[20px] border border-gray-100 flex items-center px-4 gap-3 shadow-sm">
+              <div className="w-5 h-5 rounded-full bg-gray-200 shrink-0" />
+              <div className="h-4 bg-gray-200 rounded-md w-48" />
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+              <div className="h-[44px] md:h-[56px] w-12 rounded-xl md:rounded-[20px] bg-white border border-gray-100 shadow-sm shrink-0" />
+              <div className="h-[44px] md:h-[56px] w-24 md:w-28 rounded-xl md:rounded-[20px] bg-white border border-gray-100 shadow-sm shrink-0" />
+              <div className="h-[44px] md:h-[56px] w-24 md:w-28 rounded-xl md:rounded-[20px] bg-white border border-gray-100 shadow-sm shrink-0" />
+              <div className="h-[44px] md:h-[56px] w-28 md:w-32 rounded-xl md:rounded-[20px] bg-[#33040D]/15 shadow-sm shrink-0" />
+            </div>
+          </div>
+
+          {/* Categories Strip Skeleton */}
+          <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 overflow-hidden">
+            <div className="h-9 md:h-10 w-16 rounded-full bg-[#33040D]/20 shrink-0" />
+            <div className="h-9 md:h-10 w-24 rounded-full bg-white border border-gray-200 shrink-0" />
+            <div className="h-9 md:h-10 w-20 rounded-full bg-white border border-gray-200 shrink-0" />
+            <div className="h-9 md:h-10 w-28 rounded-full bg-white border border-gray-200 shrink-0" />
+            <div className="h-9 md:h-10 w-24 rounded-full bg-white border border-gray-200 shrink-0" />
+            <div className="h-9 md:h-10 w-20 rounded-full bg-white border border-gray-200 shrink-0" />
+          </div>
+
+          {/* Product Grid Skeleton */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 pb-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4">
+              {Array.from({ length: 10 }).map((_, idx) => (
+                <div 
+                  key={idx}
+                  className="bg-white rounded-2xl md:rounded-[24px] overflow-hidden shadow-sm border border-gray-100 flex flex-col"
+                >
+                  <div className="h-32 md:h-40 bg-gray-200 relative">
+                    <div className="absolute top-2 right-2 md:top-3 md:right-3 w-16 h-5 rounded-full bg-gray-300" />
+                  </div>
+                  <div className="p-3 md:p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="h-4 bg-gray-200 rounded w-4/5" />
+                      <div className="h-3 bg-gray-100 rounded w-1/2" />
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="h-5 bg-gray-200 rounded w-16" />
+                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gray-200" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (Cart) Skeleton */}
+        <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full mt-4 lg:mt-0">
+          <div className="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+            {/* Cart Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0" />
+                <div className="space-y-1.5">
+                  <div className="h-4 bg-gray-200 rounded w-28" />
+                  <div className="h-3 bg-gray-100 rounded w-20" />
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-gray-200" />
+            </div>
+
+            {/* Cart Items Area */}
+            <div className="flex-1 p-4 space-y-3">
+              <div className="h-16 bg-gray-50 rounded-2xl border border-gray-100 p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gray-200 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="h-16 bg-gray-50 rounded-2xl border border-gray-100 p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gray-200 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+
+            {/* Cart Footer */}
+            <div className="p-4 bg-gray-50/70 border-t border-gray-100 space-y-3">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-3.5 bg-gray-200 rounded w-16" />
+                  <div className="h-3.5 bg-gray-200 rounded w-16" />
+                </div>
+                <div className="flex justify-between">
+                  <div className="h-3.5 bg-gray-200 rounded w-12" />
+                  <div className="h-3.5 bg-gray-200 rounded w-12" />
+                </div>
+              </div>
+              <div className="h-12 bg-gray-200 rounded-2xl" />
+              <div className="h-12 bg-[#33040D]/20 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
