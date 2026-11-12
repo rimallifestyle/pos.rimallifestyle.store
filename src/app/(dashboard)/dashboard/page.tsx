@@ -10,7 +10,20 @@ import { getDashboardStats } from '@/actions/dashboard';
 
 export default function DashboardPage() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dynStats, setDynStats] = React.useState({ products: 0, outlets: 0, users: 0, totalStock: 0, lowStockCount: 0 });
+  const [dynStats, setDynStats] = React.useState({
+    todaySales: 0,
+    todayOrders: 0,
+    totalRevenue: 0,
+    totalOrders: 0,
+    pendingTransfers: 0,
+    products: 0,
+    outlets: 0,
+    users: 0,
+    totalStock: 0,
+    lowStockCount: 0,
+    recentMovements: [] as any[],
+    weeklyTrend: [] as any[]
+  });
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -59,7 +72,9 @@ export default function DashboardPage() {
               <Banknote className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
             </div>
             <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Today's Sales</p>
-            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">৳ 0</h3>
+            <h3 className="text-[15px] sm:text-[17px] font-black text-[#33040D]">
+              {isLoading ? '...' : `৳ ${dynStats.todaySales.toLocaleString()}`}
+            </h3>
           </RimalCard>
         </Link>
         
@@ -69,7 +84,9 @@ export default function DashboardPage() {
               <ShoppingCart className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
             </div>
             <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Today's Orders</p>
-            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">0</h3>
+            <h3 className="text-[15px] sm:text-[17px] font-black text-gray-900">
+              {isLoading ? '...' : dynStats.todayOrders.toLocaleString()}
+            </h3>
           </RimalCard>
         </Link>
         
@@ -79,7 +96,9 @@ export default function DashboardPage() {
               <AlertTriangle className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
             </div>
             <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Low Stock Alerts</p>
-            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">{isLoading ? '...' : dynStats.lowStockCount} Products</h3>
+            <h3 className="text-[15px] sm:text-[17px] font-black text-red-600">
+              {isLoading ? '...' : `${dynStats.lowStockCount} Products`}
+            </h3>
           </RimalCard>
         </Link>
         
@@ -89,7 +108,9 @@ export default function DashboardPage() {
               <ArrowRightLeft className="w-5 sm:w-6 h-5 sm:h-6" strokeWidth={2.5} />
             </div>
             <p className="text-[13px] sm:text-[14px] font-bold text-gray-900 mb-0.5 sm:mb-1">Pending Transfers</p>
-            <h3 className="text-[12px] sm:text-[13px] font-medium text-gray-500">0</h3>
+            <h3 className="text-[15px] sm:text-[17px] font-black text-orange-600">
+              {isLoading ? '...' : `${dynStats.pendingTransfers} Transfers`}
+            </h3>
           </RimalCard>
         </Link>
       </div>
@@ -172,14 +193,55 @@ export default function DashboardPage() {
               <h2 className="text-[20px] font-bold text-gray-900 flex items-center gap-2">
                 Recent Movement <span className="text-xl">⚡</span>
               </h2>
+              <Link href="/sales" className="text-[13px] font-semibold text-[#33040D] hover:underline">
+                View All Sales &rarr;
+              </Link>
             </div>
-            <div className="space-y-4">
-              {/* Empty state for recent movement */}
-              <div className="bg-gray-50 rounded-[20px] p-8 text-center border border-gray-100 flex flex-col items-center justify-center">
-                <Box className="w-10 h-10 text-gray-300 mb-3" />
-                <h4 className="text-[15px] font-bold text-gray-900 mb-1">No Recent Movement</h4>
-                <p className="text-[13px] text-gray-500 max-w-sm">Sales, stock ins, and transfers will appear here once POS is active.</p>
-              </div>
+            <div className="space-y-3">
+              {isLoading ? (
+                <div className="bg-gray-50 rounded-[20px] p-8 text-center border border-gray-100 flex flex-col items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-[#33040D] border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-[13px] text-gray-500">Loading recent movements...</p>
+                </div>
+              ) : dynStats.recentMovements && dynStats.recentMovements.length > 0 ? (
+                dynStats.recentMovements.map((mov: any) => (
+                  <div
+                    key={mov.id}
+                    className="bg-white rounded-[18px] p-4 sm:p-5 border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center justify-between hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-full bg-[#33040D]/5 text-[#33040D] flex items-center justify-center font-bold flex-shrink-0">
+                        <ShoppingCart className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-[14px] font-bold text-gray-900">{mov.invoiceId || 'Sale Order'}</h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Paid ({mov.paymentMethod || 'Cash'})
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-gray-500 mt-0.5">
+                          {mov.customer} • {mov.outlet} • {mov.itemCount} item{mov.itemCount > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <p className="text-[15px] sm:text-[16px] font-extrabold text-[#33040D]">
+                        ৳ {Number(mov.amount || 0).toLocaleString()}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {mov.time ? new Date(mov.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-gray-50 rounded-[20px] p-8 text-center border border-gray-100 flex flex-col items-center justify-center">
+                  <Box className="w-10 h-10 text-gray-300 mb-3" />
+                  <h4 className="text-[15px] font-bold text-gray-900 mb-1">No Recent Movement</h4>
+                  <p className="text-[13px] text-gray-500 max-w-sm">Sales, stock ins, and transfers will appear here once POS transactions are recorded.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -252,30 +314,71 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Sales Trend (Mock) */}
+          {/* Sales Trend */}
           <div className="animate-on-load">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[20px] font-bold text-gray-900">Sales Trend</h2>
               <div className="flex gap-2">
-                <span className="text-[12px] font-bold bg-gray-100 px-3 py-1.5 rounded-full text-gray-600">Weekly</span>
-                <span className="text-[12px] font-bold bg-[#33040D] text-white px-3 py-1.5 rounded-full shadow-md">Monthly</span>
+                <span className="text-[12px] font-bold bg-[#33040D] text-white px-3 py-1.5 rounded-full shadow-sm">Last 7 Days</span>
               </div>
             </div>
-            <RimalCard className="!p-8">
-               <div className="flex justify-between items-end mb-6">
-                 <div>
-                   <p className="text-[12px] font-medium text-gray-400 mb-1">Total Revenue</p>
-                   <h3 className="text-[24px] font-bold text-gray-900">৳ 0</h3>
-                 </div>
-                 <div className="text-[12px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">0%</div>
-               </div>
-               
-               <div className="h-32 w-full flex items-center justify-center bg-gray-50 rounded-lg mt-8 border border-gray-100 border-dashed">
-                 <p className="text-[12px] font-medium text-gray-400">Not enough data to show chart</p>
-               </div>
-               <div className="flex justify-between mt-4 text-[11px] font-bold text-gray-400">
-                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-               </div>
+            <RimalCard className="!p-6 sm:!p-8">
+              <div className="flex justify-between items-end mb-6">
+                <div>
+                  <p className="text-[12px] font-medium text-gray-400 mb-1">Total Completed Revenue</p>
+                  <h3 className="text-[22px] sm:text-[24px] font-black text-gray-900">
+                    {isLoading ? '...' : `৳ ${dynStats.totalRevenue.toLocaleString()}`}
+                  </h3>
+                </div>
+                <div className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
+                  {isLoading ? '...' : `${dynStats.totalOrders} Total Orders`}
+                </div>
+              </div>
+
+              {/* Dynamic 7-day Bar Chart */}
+              {(() => {
+                const trend = dynStats.weeklyTrend || [];
+                const maxVal = Math.max(...trend.map((t: any) => t.sales || 0), 100);
+
+                return (
+                  <div>
+                    <div className="h-36 w-full flex items-end justify-between gap-2 pt-6 px-1">
+                      {trend.map((item: any, idx: number) => {
+                        const heightPct = Math.max(12, Math.round(((item.sales || 0) / maxVal) * 100));
+                        const hasSales = (item.sales || 0) > 0;
+                        return (
+                          <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 group relative">
+                            {/* Hover tooltip */}
+                            <div className="absolute -top-10 bg-gray-900 text-white text-[10px] font-medium py-1 px-2 rounded pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20 whitespace-nowrap shadow-md">
+                              {item.day}: ৳{Number(item.sales || 0).toLocaleString()} ({item.orders || 0} orders)
+                            </div>
+
+                            {/* Bar container */}
+                            <div className="w-full flex items-end justify-center h-28">
+                              <div
+                                style={{ height: `${heightPct}%` }}
+                                className={`w-full max-w-[28px] rounded-t-lg transition-all duration-500 ${
+                                  hasSales
+                                    ? 'bg-gradient-to-t from-[#33040D] to-[#6a0d20] shadow-sm group-hover:brightness-110'
+                                    : 'bg-gray-100'
+                                }`}
+                              />
+                            </div>
+                            
+                            {/* Day label */}
+                            <span className="text-[11px] font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
+                              {item.day}
+                            </span>
+                            <span className="text-[9px] text-gray-400 -mt-1">
+                              {item.date}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </RimalCard>
           </div>
 

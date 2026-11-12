@@ -4,23 +4,61 @@ import dbConnect from '@/lib/rimal-db';
 import Product from '@/models/Product';
 import Outlet from '@/models/Outlet';
 import User from '@/models/User';
+import Sale from '@/models/Sale';
+import Transfer from '@/models/Transfer';
 
 export async function getDashboardStats() {
   try {
     await dbConnect();
     
-    // Total Products
-    const productsCount = await Product.countDocuments();
+    // Bangladesh Standard Time is UTC+6
+    const BD_OFFSET_HOURS = 6;
+    const nowUtc = new Date();
+    const nowBd = new Date(nowUtc.getTime() + BD_OFFSET_HOURS * 60 * 60 * 1000);
+
+    const bdYear = nowBd.getUTCFullYear();
+    const bdMonth = nowBd.getUTCMonth();
+    const bdDate = nowBd.getUTCDate();
+
+    // Start of today in BD (00:00:00 BD) converted to UTC
+    const startOfToday = new Date(Date.UTC(bdYear, bdMonth, bdDate, 0 - BD_OFFSET_HOURS, 0, 0, 0));
+    // End of today in BD (23:59:59.999 BD) converted to UTC
+    const endOfToday = new Date(Date.UTC(bdYear, bdMonth, bdDate, 23 - BD_OFFSET_HOURS, 59, 59, 999));
+
+    // 1. Sales Today (Live calculation from Sale collection)
+    const salesToday = await Sale.find({
+      createdAt: { $gte: startOfToday, $lte: endOfToday },
+      status: 'COMPLETED'
+    }).lean();
+
+    const todaySales = salesToday.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
+    const todayOrders = salesToday.length;
+
+    // 2. Total Revenue & All Completed Sales
+    const allCompletedSales = await Sale.find({ status: 'COMPLETED' }, 'total createdAt items customerName paymentMethod invoiceId outletId')
+      .populate('outletId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const totalRevenue = allCompletedSales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
+    const totalOrders = allCompletedSales.length;
+
+    // 3. Pending Transfers
+    const pendingTransfers = await Transfer.countDocuments({
+      status: { $in: ['LOADING', 'IN_TRANSIT'] }
+    });
+
+    // 4. Total Products
+    const productsCount = await Product.countDocuments({ isActive: { $ne: false } });
     
-    // Total Outlets
+    // 5. Total Outlets
     const outletsCount = await Outlet.countDocuments();
     
-    // Total Users / Employees
+    // 6. Total Users / Employees
     const usersCount = await User.countDocuments();
     
-    // Total variants stock across all products (Warehouse stock approximation)
-    // And low stock calculation
-    const products = await Product.find({}, 'variants totalStock');
+    // 7. Total Stock & Low Stock
+    const products = await Product.find({}, 'variants totalStock').lean();
     let totalStock = 0;
     let lowStockCount = 0;
     
@@ -42,14 +80,57 @@ export async function getDashboardStats() {
       if (hasLowStock || productStock <= 10) lowStockCount++;
     });
 
+    // 8. Recent Movements (latest 6 sales)
+    const recentMovements = allCompletedSales.slice(0, 6).map((s: any) => ({
+      id: s._id.toString(),
+      type: 'sale',
+      invoiceId: s.invoiceId,
+      outlet: s.outletId?.name || 'Head Office',
+      amount: s.total || 0,
+      itemCount: s.items?.reduce((acc: number, i: any) => acc + (i.quantity || 1), 0) || s.items?.length || 1,
+      customer: s.customerName || 'Walk-in Customer',
+      paymentMethod: s.paymentMethod,
+      time: s.createdAt
+    }));
+
+    // 9. Weekly Sales Trend (last 7 days)
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyTrend: any[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.UTC(bdYear, bdMonth, bdDate - i, 0, 0, 0, 0));
+      const dayStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0 - BD_OFFSET_HOURS, 0, 0, 0));
+      const dayEnd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23 - BD_OFFSET_HOURS, 59, 59, 999));
+
+      const daySales = allCompletedSales.filter((s: any) => {
+        const sTime = new Date(s.createdAt).getTime();
+        return sTime >= dayStart.getTime() && sTime <= dayEnd.getTime();
+      });
+
+      const dayTotal = daySales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
+
+      weeklyTrend.push({
+        day: dayNames[d.getUTCDay()],
+        date: `${d.getUTCDate()}/${d.getUTCMonth() + 1}`,
+        sales: dayTotal,
+        orders: daySales.length
+      });
+    }
+
     return {
       success: true,
       stats: {
+        todaySales,
+        todayOrders,
+        totalRevenue,
+        totalOrders,
+        pendingTransfers,
         products: productsCount,
         outlets: outletsCount,
         users: usersCount,
-        totalStock: totalStock,
-        lowStockCount: lowStockCount
+        totalStock,
+        lowStockCount,
+        recentMovements,
+        weeklyTrend
       }
     };
   } catch (error: any) {
