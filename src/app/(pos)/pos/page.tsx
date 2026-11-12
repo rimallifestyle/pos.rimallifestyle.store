@@ -933,48 +933,51 @@ export default function POSPage() {
                 .print-area { width: 80mm !important; max-width: 80mm !important; margin: 0 auto !important; padding: 0mm 5mm !important; border: none !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; overflow: hidden !important; }
               `}
             </style>
-            <div className="print-area w-full bg-white p-6 rounded-lg font-mono text-[12px] font-bold text-black border border-black shadow-inner mb-6 print:mb-0 relative overflow-hidden">
-              <div className="text-center mb-4 print:mb-2 border-b-2 border-dashed border-black pb-4 print:pb-2">
-                <h3 className="text-[18px] font-black text-black font-sans tracking-widest uppercase">{posContext.outletName}</h3>
-                <p>{posContext.outletLocation}</p>
-                <p>Date: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</p>
-                <p>Cashier: {posContext.cashierName}</p>
-                {customerPhone && <p className="mt-1">Customer: {customerPhone}</p>}
+            <div className="print-area w-full bg-white p-5 rounded-xl font-mono text-[12px] font-normal text-black border border-gray-300 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
+              <div className="text-center mb-3 pb-3 border-b border-black print:mb-2 print:pb-2">
+                <h3 className="text-[16px] font-bold text-black font-sans tracking-wider uppercase">{posContext.outletName}</h3>
+                <p className="text-[11px] font-normal text-black">{posContext.outletLocation}</p>
+                <p className="text-[11px] font-normal text-black">Date: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-[11px] font-normal text-black">Cashier: {posContext.cashierName}</p>
+                {customerPhone && <p className="text-[11px] font-normal text-black mt-0.5">Customer: {customerPhone}</p>}
               </div>
-              <div className="space-y-2 border-b-2 border-dashed border-black pb-4 print:pb-2 mb-4 print:mb-2">
+
+              <div className="space-y-1.5 border-b border-black pb-3 mb-3 print:pb-2 print:mb-2">
                 {cartItems.map(item => (
-                  <div key={item.id} className="flex justify-between">
-                    <span className="truncate pr-4">{item.qty}x {item.name}</span>
-                    <span>{item.price * item.qty}</span>
+                  <div key={item.id} className="flex justify-between text-[11px]">
+                    <span className="truncate pr-3 font-normal text-black">{item.qty}x {item.name}</span>
+                    <span className="font-medium text-black shrink-0">৳{item.price * item.qty}</span>
                   </div>
                 ))}
               </div>
-              <div className="space-y-1 border-b-2 border-dashed border-black pb-4 print:pb-2 mb-4 print:mb-2">
-                <div className="flex justify-between text-black"><span>Subtotal</span><span>{subtotal}</span></div>
+
+              <div className="space-y-1 border-b border-black pb-3 mb-3 print:pb-2 print:mb-2 text-[11px] font-normal text-black">
+                <div className="flex justify-between"><span>Subtotal</span><span>৳{subtotal}</span></div>
                 {posSettings.vatEnabled && (
-                  <div className="flex justify-between text-black"><span>Tax ({posSettings.vatPercentage}%)</span><span>{tax}</span></div>
+                  <div className="flex justify-between"><span>Tax ({posSettings.vatPercentage}%)</span><span>৳{tax}</span></div>
                 )}
-                {discountValue > 0 && <div className="flex justify-between text-black"><span>Discount</span><span>-{discountValue}</span></div>}
-                <div className="flex justify-between text-[16px] font-black text-black mt-2 pt-2 border-t-2 border-dashed border-black">
-                  <span>TOTAL</span><span>৳ {total}</span>
+                {discountValue > 0 && <div className="flex justify-between"><span>Discount</span><span>-৳{discountValue}</span></div>}
+                <div className="flex justify-between text-[14px] font-bold text-black mt-2 pt-2 border-t border-black">
+                  <span>TOTAL</span><span>৳{total}</span>
                 </div>
               </div>
+
               <div className="text-center">
-                <p className="font-black">
+                <p className="text-[11px] font-semibold text-black">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   {completedInvoiceId && (
-                    <div className="flex justify-center mt-2 mb-2 w-full overflow-hidden">
+                    <div className="flex justify-center mt-2 mb-1 w-full overflow-hidden">
                       <div className="scale-90 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
                           width={1.2} 
-                          height={35} 
+                          height={32} 
                           displayValue={true} 
-                          fontSize={11} 
-                          margin={5} 
+                          fontSize={10} 
+                          margin={4} 
                           background="transparent"
                           lineColor="#000"
                         />
@@ -982,7 +985,7 @@ export default function POSPage() {
                     </div>
                   )}
                   
-                  <p className="text-[10px] mt-1 text-black font-bold">Thank you for shopping at Rimal!</p>
+                  <p className="text-[10px] mt-1 text-black font-normal">Thank you for shopping at Rimal!</p>
                 </div>
               </div>
             </div>
