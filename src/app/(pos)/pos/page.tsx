@@ -1059,104 +1059,110 @@ export default function POSPage() {
             {/* Mock Thermal Receipt */}
             <style type="text/css" media="print">
               {`
-                @page { size: portrait; margin: 0; }
-                body { 
-                  margin: 0; 
-                  padding: 0; 
-                  background: white; 
+                @page { 
+                  size: 80mm auto; 
+                  margin: 0mm !important; 
+                }
+                html, body { 
+                  margin: 0 !important; 
+                  padding: 0 !important; 
+                  background: #ffffff !important; 
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
                 .print-area { 
-                  width: 78mm !important; 
-                  max-width: 78mm !important; 
+                  width: 74mm !important; 
+                  max-width: 74mm !important; 
                   margin: 0 auto !important; 
-                  padding: 4mm 3mm !important; 
+                  padding: 6mm 2mm 8mm 2mm !important; 
                   border: none !important; 
                   box-shadow: none !important; 
                   page-break-inside: avoid !important; 
                   break-inside: avoid !important; 
                   overflow: hidden !important; 
-                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
                   color: #000000 !important;
                 }
                 .print-area * {
                   color: #000000 !important;
                   box-shadow: none !important;
+                  text-shadow: none !important;
                 }
               `}
             </style>
-            <div className="print-area w-full bg-white p-5 rounded-2xl font-sans text-[12px] text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
+            <div className="print-area w-full bg-white p-6 rounded-2xl font-sans text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
               {/* Store Header */}
-              <div className="text-center mb-4">
-                <h3 className="text-[18px] font-black text-black tracking-widest uppercase font-sans">{posContext.outletName}</h3>
-                <p className="text-[11px] font-medium text-black mt-0.5">{posContext.outletLocation}</p>
-                <div className="text-[10px] text-black font-medium mt-1 flex justify-center items-center gap-2">
-                  <span>{new Date().toLocaleDateString('en-GB')}</span>
-                  <span>•</span>
-                  <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <div className="text-center mb-5">
+                <h3 className="text-[22px] font-black text-black tracking-widest uppercase leading-none font-sans">
+                  {posContext.outletName}
+                </h3>
+                <p className="text-[13px] font-bold text-black mt-1">
+                  {posContext.outletLocation}
+                </p>
+                
+                <div className="text-[12px] font-bold text-black mt-2 space-y-0.5">
+                  <p>{new Date().toLocaleDateString('en-GB')} &nbsp;•&nbsp; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p>Invoice: {completedInvoiceId} &nbsp;•&nbsp; Cashier: {posContext.cashierName}</p>
+                  {customerPhone && <p>Customer: {customerPhone}</p>}
                 </div>
-                <div className="text-[10px] text-black font-medium mt-0.5 flex justify-center items-center gap-2">
-                  <span>Inv: {completedInvoiceId}</span>
-                  <span>•</span>
-                  <span>Cashier: {posContext.cashierName}</span>
-                </div>
-                {customerPhone && <p className="text-[10px] text-black font-medium mt-0.5">Customer: {customerPhone}</p>}
               </div>
 
-              {/* Items Section (clean without harsh long lines) */}
-              <div className="space-y-2 mb-3">
+              {/* Items Section */}
+              <div className="space-y-3 mb-4">
                 {cartItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-baseline text-[12px]">
-                    <div className="pr-3 leading-snug">
-                      <span className="font-semibold text-black">{item.name}</span>
-                      <span className="text-[10px] text-black/75 block">{item.qty} × ৳{item.price}</span>
+                  <div key={item.id} className="flex justify-between items-start text-black">
+                    <div className="pr-2 leading-tight">
+                      <p className="text-[14px] font-bold text-black">{item.name}</p>
+                      <p className="text-[12px] font-bold text-black mt-0.5">{item.qty} × Tk {item.price}</p>
                     </div>
-                    <span className="font-bold text-black shrink-0">৳{item.price * item.qty}</span>
+                    <span className="text-[14px] font-black text-black shrink-0">
+                      Tk {item.price * item.qty}
+                    </span>
                   </div>
                 ))}
               </div>
 
               {/* Totals Section */}
-              <div className="space-y-1 py-2 mb-3 text-[11px] text-black">
-                <div className="flex justify-between font-normal">
+              <div className="space-y-1.5 py-2 mb-4 text-[13px] font-bold text-black">
+                <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>৳{subtotal}</span>
+                  <span>Tk {subtotal}</span>
                 </div>
                 {posSettings.vatEnabled && (
-                  <div className="flex justify-between font-normal">
+                  <div className="flex justify-between">
                     <span>Tax ({posSettings.vatPercentage}%)</span>
-                    <span>৳{tax}</span>
+                    <span>Tk {tax}</span>
                   </div>
                 )}
                 {discountValue > 0 && (
-                  <div className="flex justify-between font-normal">
+                  <div className="flex justify-between">
                     <span>Discount</span>
-                    <span>-৳{discountValue}</span>
+                    <span>-Tk {discountValue}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-baseline text-[16px] font-black text-black pt-2 mt-1">
+                
+                <div className="flex justify-between items-baseline text-[20px] font-black text-black pt-2 mt-1">
                   <span>TOTAL</span>
-                  <span>৳{total}</span>
+                  <span>Tk {total}</span>
                 </div>
               </div>
 
               {/* Payment Method & Barcode */}
-              <div className="text-center">
-                <p className="text-[11px] font-bold text-black uppercase tracking-wider mb-2">
+              <div className="text-center pt-1">
+                <p className="text-[13px] font-black text-black uppercase tracking-wider mb-2">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   {completedInvoiceId && (
-                    <div className="flex justify-center my-2 w-full overflow-hidden">
-                      <div className="scale-95 origin-center">
+                    <div className="flex justify-center my-3 w-full overflow-hidden">
+                      <div className="scale-100 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
-                          width={1.3} 
-                          height={34} 
+                          width={1.5} 
+                          height={38} 
                           displayValue={true} 
-                          fontSize={10} 
+                          fontSize={12} 
                           margin={4} 
                           background="transparent"
                           lineColor="#000000"
@@ -1165,8 +1171,8 @@ export default function POSPage() {
                     </div>
                   )}
                   
-                  <p className="text-[11px] font-semibold text-black mt-2">Thank you for shopping at Rimal!</p>
-                  <p className="text-[9px] text-black/70 mt-0.5">Please preserve this receipt for exchange</p>
+                  <p className="text-[12px] font-bold text-black mt-2">Thank you for shopping at Rimal!</p>
+                  <p className="text-[11px] font-bold text-black mt-0.5">Please preserve this receipt for exchange</p>
                 </div>
               </div>
             </div>
