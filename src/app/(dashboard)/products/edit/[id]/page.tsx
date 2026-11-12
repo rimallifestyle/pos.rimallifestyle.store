@@ -883,9 +883,18 @@ export default function EditProductPage({ params }: { params: any }) {
           </RimalCard>
 
           <RimalCard>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[16px] font-bold text-gray-900">Product Categories</h2>
-              <button type="button" onClick={() => setIsAddingCat(!isAddingCat)} className="text-[#33040D] hover:text-[#4a0614] text-xs font-bold transition-colors cursor-pointer">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-[16px] font-bold text-gray-900">Product Categories</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Selected: <span className="font-bold text-[#33040D] bg-[#33040D]/10 px-2 py-0.5 rounded-md">{category || 'None selected'}</span>
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsAddingCat(!isAddingCat)} 
+                className="text-[#33040D] hover:text-[#4a0614] text-xs font-bold transition-colors cursor-pointer bg-[#33040D]/5 px-2.5 py-1.5 rounded-lg hover:bg-[#33040D]/10"
+              >
                 {isAddingCat ? 'Cancel' : '+ Add New'}
               </button>
             </div>
@@ -905,7 +914,7 @@ export default function EditProductPage({ params }: { params: any }) {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#33040D]"
                 >
                   <option value="">-- No Parent (Top Level) --</option>
-                  {dbCategories.filter(c => !c.parentId).map(c => (
+                  {dbCategories.filter(c => !c.parentId || c.parentId === 'null').map(c => (
                     <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
@@ -918,27 +927,110 @@ export default function EditProductPage({ params }: { params: any }) {
             <div className="border border-gray-100 rounded-xl max-h-[300px] overflow-y-auto bg-gray-50/50 p-2 space-y-1">
               {dbCategories.length === 0 && <p className="text-xs text-center p-3 text-gray-500">No categories found. Add one!</p>}
               
-              {dbCategories.filter(c => !c.parentId).map(parent => (
-                <div key={parent._id}>
-                  <label className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${category === parent.name ? 'bg-[#33040D]/5 text-[#33040D]' : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${category === parent.name ? 'border-[#33040D] bg-[#33040D]' : 'border-gray-300 bg-white'}`}>
-                      {category === parent.name && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                    </div>
-                    <Folder className="w-4 h-4 text-gray-400" />
-                    <span className="text-[13px] font-bold flex-1">{parent.name}</span>
-                  </label>
+              {/* Top-level Categories */}
+              {dbCategories
+                .filter(c => !c.parentId || c.parentId === 'null')
+                .map(parent => {
+                  const isSelected = category === parent.name;
+                  const children = dbCategories.filter(c => c.parentId && c.parentId.toString() === parent._id.toString());
                   
-                  {/* Render Subcategories */}
-                  {dbCategories.filter(c => c.parentId === parent._id).map(child => (
-                    <label key={child._id} className={`flex items-center gap-3 p-2 pl-8 rounded-lg cursor-pointer transition-colors ${category === child.name ? 'bg-[#33040D]/5 text-[#33040D]' : 'hover:bg-gray-100 text-gray-600'}`}>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${category === child.name ? 'border-[#33040D] bg-[#33040D]' : 'border-gray-300 bg-white'}`}>
-                        {category === child.name && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                  return (
+                    <div key={parent._id} className="space-y-1">
+                      <div
+                        onClick={() => setCategory(parent.name)}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all select-none ${
+                          isSelected 
+                            ? 'bg-[#33040D] text-white shadow-sm' 
+                            : 'hover:bg-white text-gray-800 bg-white/60 border border-gray-100/80'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="product-category"
+                          value={parent.name}
+                          checked={isSelected}
+                          onChange={() => setCategory(parent.name)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                          isSelected ? 'border-white bg-white' : 'border-gray-300 bg-white'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-[#33040D] rounded-full"></div>}
+                        </div>
+                        <Folder className={`w-4 h-4 ${isSelected ? 'text-white/80' : 'text-gray-400'}`} />
+                        <span className="text-[13px] font-bold flex-1">{parent.name}</span>
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
                       </div>
-                      <span className="text-[13px] font-medium flex-1">{child.name}</span>
-                    </label>
-                  ))}
-                </div>
-              ))}
+                      
+                      {/* Subcategories */}
+                      {children.map(child => {
+                        const isChildSelected = category === child.name;
+                        return (
+                          <div
+                            key={child._id}
+                            onClick={() => setCategory(child.name)}
+                            className={`flex items-center gap-3 p-2 pl-8 rounded-lg cursor-pointer transition-all select-none ${
+                              isChildSelected 
+                                ? 'bg-[#33040D] text-white shadow-sm' 
+                                : 'hover:bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="product-category"
+                              value={child.name}
+                              checked={isChildSelected}
+                              onChange={() => setCategory(child.name)}
+                              className="sr-only"
+                            />
+                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                              isChildSelected ? 'border-white bg-white' : 'border-gray-300 bg-white'
+                            }`}>
+                              {isChildSelected && <div className="w-1.5 h-1.5 bg-[#33040D] rounded-full"></div>}
+                            </div>
+                            <span className="text-[12.5px] font-medium flex-1">{child.name}</span>
+                            {isChildSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+
+              {/* Orphaned categories (categories with parentId that doesn't match any loaded parent) */}
+              {dbCategories
+                .filter(c => c.parentId && c.parentId !== 'null' && !dbCategories.some(p => p._id.toString() === c.parentId.toString()))
+                .map(orphan => {
+                  const isSelected = category === orphan.name;
+                  return (
+                    <div
+                      key={orphan._id}
+                      onClick={() => setCategory(orphan.name)}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all select-none ${
+                        isSelected 
+                          ? 'bg-[#33040D] text-white shadow-sm' 
+                          : 'hover:bg-white text-gray-800 bg-white/60 border border-gray-100/80'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="product-category"
+                        value={orphan.name}
+                        checked={isSelected}
+                        onChange={() => setCategory(orphan.name)}
+                        className="sr-only"
+                      />
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? 'border-white bg-white' : 'border-gray-300 bg-white'
+                      }`}>
+                        {isSelected && <div className="w-2 h-2 bg-[#33040D] rounded-full"></div>}
+                      </div>
+                      <Folder className={`w-4 h-4 ${isSelected ? 'text-white/80' : 'text-gray-400'}`} />
+                      <span className="text-[13px] font-bold flex-1">{orphan.name}</span>
+                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  );
+                })}
             </div>
           </RimalCard>
 
