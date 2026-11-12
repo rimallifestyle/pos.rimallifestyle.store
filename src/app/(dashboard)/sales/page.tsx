@@ -3,15 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Search, FileText, CheckCircle2, Clock, Calendar, Hash, Banknote, CreditCard, ChevronDown, ChevronUp, Store } from 'lucide-react';
-import { getSales } from '@/actions/sales';
+import { Search, FileText, CheckCircle2, Clock, Calendar, Hash, Banknote, CreditCard, ChevronDown, ChevronUp, Store, Trash2, Loader2, AlertTriangle, X } from 'lucide-react';
+import { getSales, deleteSale } from '@/actions/sales';
 import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 export default function SalesHistoryPage() {
   const [sales, setSales] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<{ id: string; invoiceId: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchSales() {
@@ -21,6 +24,20 @@ export default function SalesHistoryPage() {
     }
     fetchSales();
   }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!saleToDelete) return;
+    setIsDeleting(true);
+    const res = await deleteSale(saleToDelete.id);
+    setIsDeleting(false);
+    if (res.success) {
+      toast.success(`Sale ${saleToDelete.invoiceId} deleted successfully`);
+      setSales(prev => prev.filter(s => s._id !== saleToDelete.id));
+      setSaleToDelete(null);
+    } else {
+      toast.error(res.error || 'Failed to delete sale');
+    }
+  };
 
   const filteredSales = sales.filter(s => 
     s.invoiceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +86,7 @@ export default function SalesHistoryPage() {
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Payment</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Details</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -139,12 +156,22 @@ export default function SalesHistoryPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => toggleExpand(sale._id)}
-                            className="p-2 text-gray-400 hover:text-[#33040D] hover:bg-gray-100 rounded-lg transition-colors inline-flex cursor-pointer"
-                          >
-                            {expandedId === sale._id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button 
+                              onClick={() => toggleExpand(sale._id)}
+                              title={expandedId === sale._id ? "Hide Details" : "View Details"}
+                              className="p-2 text-gray-400 hover:text-[#33040D] hover:bg-gray-100 rounded-lg transition-colors inline-flex cursor-pointer"
+                            >
+                              {expandedId === sale._id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            </button>
+                            <button 
+                              onClick={() => setSaleToDelete({ id: sale._id, invoiceId: sale.invoiceId })}
+                              title="Delete Sale Record"
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       
@@ -221,14 +248,24 @@ export default function SalesHistoryPage() {
                   </div>
                 </div>
 
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider ${
-                  sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                  sale.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
-                  {sale.status === 'COMPLETED' ? <CheckCircle2 className="w-3 h-3" /> : sale.status === 'PENDING' ? <Clock className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-                  {sale.status}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider ${
+                    sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                    sale.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {sale.status === 'COMPLETED' ? <CheckCircle2 className="w-3 h-3" /> : sale.status === 'PENDING' ? <Clock className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                    {sale.status}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSaleToDelete({ id: sale._id, invoiceId: sale.invoiceId })}
+                    title="Delete Sale Record"
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Customer & Outlet details */}
@@ -300,6 +337,49 @@ export default function SalesHistoryPage() {
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {saleToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden animate-slide-up border border-gray-100">
+            <button 
+              onClick={() => !isDeleting && setSaleToDelete(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Sale Record?</h3>
+            <p className="text-sm text-gray-600 leading-relaxed mb-6">
+              Are you sure you want to delete invoice <strong className="text-gray-900">{saleToDelete.invoiceId}</strong>? If this sale is active, its product variant stock will be automatically restored to inventory.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setSaleToDelete(null)}
+                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex-1 py-3 px-4 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
