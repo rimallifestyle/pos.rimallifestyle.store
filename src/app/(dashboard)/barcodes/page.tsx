@@ -5,16 +5,17 @@ import gsap from 'gsap';
 import Barcode from 'react-barcode';
 import RimalTopBar from '@/components/rimal-ui/RimalTopBar';
 import RimalCard from '@/components/rimal-ui/RimalCard';
-import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, Database } from 'lucide-react';
-import { searchProducts, getAllProducts, createProductWithVariants } from '@/actions/products';
+import { Search, Printer, Plus, Minus, Tag, Trash2, Loader2, X } from 'lucide-react';
+import { searchProducts, getAllProducts } from '@/actions/products';
 
 export default function BarcodeCenterPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [catalog, setCatalog] = useState<any[]>([]);
+  const [masterCatalog, setMasterCatalog] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const [isAddingDB, setIsAddingDB] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [orientation, setOrientation] = useState<'normal' | 'rotate90' | 'rotate270'>('normal');
@@ -49,9 +50,6 @@ export default function BarcodeCenterPage() {
     } catch (e) {}
   };
 
-  // Form for quick add
-  const [newProd, setNewProd] = useState({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
-
   useEffect(() => {
     if (!containerRef.current) return;
     const elements = containerRef.current.querySelectorAll('.animate-on-load');
@@ -62,48 +60,94 @@ export default function BarcodeCenterPage() {
   }, []);
 
   const fetchInitialProducts = async () => {
-    const data = await getAllProducts();
-    setCatalog(data);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = e.target.value;
-    setSearchQuery(q);
-    startTransition(async () => {
-      if (q.trim() === '') {
-        const data = await getAllProducts();
-        setCatalog(data);
-      } else {
-        const data = await searchProducts(q);
-        setCatalog(data);
-      }
-    });
-  };
-
-  const handleCreateDB = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAddingDB(true);
-    const res = await createProductWithVariants({
-      title: newProd.name,
-      slug: newProd.name.toLowerCase().replace(/\s+/g, '-'),
-      category: newProd.category,
-      variants: [{
-        sku: newProd.sku,
-        size: newProd.size,
-        color: newProd.color,
-        price: newProd.price,
-        costPrice: newProd.costPrice,
-        quantity: 0
-      }]
-    });
-    if (res.success) {
-      setNewProd({ name: '', sku: '', category: 'General', price: 0, costPrice: 0, size: 'M', color: 'Black' });
-      fetchInitialProducts();
-      alert('Product saved to DB!');
-    } else {
-      alert('Error: ' + res.error);
+    setIsSearching(true);
+    try {
+      const data = await getAllProducts();
+      setCatalog(data);
+      setMasterCatalog(data);
+    } catch (e) {
+      console.error('Fetch products error:', e);
+    } finally {
+      setIsSearching(false);
     }
-    setIsAddingDB(false);
+  };
+
+  const executeSearch = async (query: string) => {
+    const q = query.trim();
+    if (!q) {
+      setCatalog(masterCatalog);
+      setIsSearching(false);
+      return;
+    }
+
+    // Instant local filter from master catalog
+    const qLower = q.toLowerCase();
+    const localMatches = masterCatalog.filter(item => 
+      (item.name || '').toLowerCase().includes(qLower) ||
+      (item.sku || '').toLowerCase().includes(qLower) ||
+      (item.category || '').toLowerCase().includes(qLower) ||
+      (item.size || '').toLowerCase().includes(qLower) ||
+      (item.color || '').toLowerCase().includes(qLower)
+    );
+    if (localMatches.length > 0) {
+      setCatalog(localMatches);
+    }
+
+    setIsSearching(true);
+    try {
+      const dbResults = await searchProducts(q);
+      setCatalog(dbResults);
+    } catch (e) {
+      console.error('Search error:', e);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (val.trim() === '') {
+      setCatalog(masterCatalog);
+      setIsSearching(false);
+      return;
+    }
+
+    // Fast instant filter on keystroke
+    const qLower = val.trim().toLowerCase();
+    const localMatches = masterCatalog.filter(item => 
+      (item.name || '').toLowerCase().includes(qLower) ||
+      (item.sku || '').toLowerCase().includes(qLower) ||
+      (item.category || '').toLowerCase().includes(qLower) ||
+      (item.size || '').toLowerCase().includes(qLower) ||
+      (item.color || '').toLowerCase().includes(qLower)
+    );
+    if (localMatches.length > 0) {
+      setCatalog(localMatches);
+    }
+
+    // Debounce DB search (300ms)
+    searchTimeoutRef.current = setTimeout(() => {
+      executeSearch(val);
+    }, 300);
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    executeSearch(searchQuery);
+  };
+
+  const handleClearSearch = () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    setSearchQuery('');
+    setCatalog(masterCatalog);
+    setIsSearching(false);
   };
 
   const addToQueue = (product: any) => {
@@ -214,56 +258,66 @@ export default function BarcodeCenterPage() {
         {/* Left Column - Builder & Queue (Not printable) */}
         <div className="xl:col-span-7 space-y-6 print:hidden">
           
-          {/* Create Product Inline Form */}
-          <RimalCard className="animate-on-load bg-gray-50 border border-gray-100">
-            <h2 className="text-[16px] font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Database className="w-5 h-5 text-[#33040D]" /> Add New Product to DB
-            </h2>
-            <form onSubmit={handleCreateDB} className="flex gap-2 items-center flex-wrap">
-              <input type="text" placeholder="Name" required value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} className="px-3 py-2 rounded-lg border text-sm w-40" />
-              <input type="text" placeholder="SKU" required value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} className="px-3 py-2 rounded-lg border text-sm w-32" />
-              <input type="number" placeholder="Price" required value={newProd.price || ''} onChange={e => setNewProd({...newProd, price: Number(e.target.value)})} className="px-3 py-2 rounded-lg border text-sm w-24" />
-              <button disabled={isAddingDB} type="submit" className="bg-[#33040D] text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-[#4a0614] flex items-center gap-2">
-                {isAddingDB ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save to DB'}
-              </button>
-            </form>
-          </RimalCard>
-
           <RimalCard className="animate-on-load">
-            <h2 className="text-[18px] font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Search className="w-5 h-5 text-[#33040D]" /> Search Database & Add to Queue
+            <h2 className="text-[18px] font-bold text-gray-900 mb-5 flex items-center gap-2">
+              <Search className="w-5 h-5 text-[#33040D]" /> Search product Add to Queue
             </h2>
-            <div className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
                 value={searchQuery}
-                onChange={handleSearch}
-                className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-[16px] text-[14px] bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all shadow-inner"
-                placeholder="Search catalog by SKU or Product Name..."
+                onChange={handleSearchChange}
+                className="block w-full pl-12 pr-28 py-3.5 border border-gray-200 rounded-[16px] text-[14px] bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all shadow-inner"
+                placeholder="Search by SKU (e.g. RL-211-S) or Product Name..."
               />
-              <div className="absolute inset-y-2 right-2 flex items-center">
-                {isPending && <Loader2 className="w-5 h-5 text-gray-400 animate-spin mr-3" />}
-                <button className="px-6 bg-[#33040D] text-white rounded-xl hover:bg-[#4a0614] transition-colors font-bold text-[13px] shadow-md h-full">
-                  Browse
+              <div className="absolute inset-y-1.5 right-1.5 flex items-center gap-1">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer mr-1"
+                    title="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <button 
+                  type="submit"
+                  disabled={isSearching}
+                  className="px-5 bg-[#33040D] text-white rounded-xl hover:bg-[#4a0614] transition-colors font-bold text-[13px] shadow-sm h-full flex items-center gap-1.5 cursor-pointer disabled:opacity-75"
+                >
+                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
                 </button>
               </div>
-            </div>
+            </form>
             
             {/* Catalog Search Results Preview */}
-            <div className="mt-4 border border-gray-100 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+            <div className="mt-4 border border-gray-100 rounded-xl overflow-hidden max-h-72 overflow-y-auto">
               {catalog.length === 0 ? (
-                <div className="p-4 text-center text-sm text-gray-500">No products found in DB.</div>
+                <div className="p-6 text-center text-sm text-gray-500 font-medium">
+                  {searchQuery ? `No products found matching "${searchQuery}".` : 'No products found in DB.'}
+                </div>
               ) : catalog.map((item, idx) => (
-                <div key={item._id || idx} className="flex justify-between items-center p-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors">
+                <div key={item._id ? `${item._id}-${item.sku}-${idx}` : idx} className="flex justify-between items-center p-3.5 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors">
                   <div>
-                    <p className="text-[13px] font-bold text-gray-900">{item.name} <span className="text-gray-400 font-normal">| {item.size} / {item.color}</span></p>
-                    <p className="text-[11px] font-mono text-gray-500 mt-0.5">{item.sku} • ৳{item.price}</p>
+                    <p className="text-[13px] font-bold text-gray-900">
+                      {item.name} <span className="text-gray-400 font-normal">| {item.size} / {item.color}</span>
+                    </p>
+                    <p className="text-[11px] font-mono text-gray-500 mt-1 flex items-center gap-2">
+                      <span className="font-bold text-[#33040D] bg-[#33040D]/10 px-2 py-0.5 rounded text-[11px]">
+                        {item.sku}
+                      </span>
+                      <span>৳{item.price}</span>
+                    </p>
                   </div>
-                  <button onClick={() => addToQueue(item)} className="text-[11px] font-bold bg-[#33040D]/5 text-[#33040D] px-3 py-1.5 rounded-full hover:bg-[#33040D] hover:text-white transition-colors">
-                    Add to Queue
+                  <button 
+                    onClick={() => addToQueue(item)} 
+                    className="text-[11px] font-bold bg-[#33040D]/5 text-[#33040D] px-3.5 py-1.5 rounded-full hover:bg-[#33040D] hover:text-white transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add to Queue
                   </button>
                 </div>
               ))}

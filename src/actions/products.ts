@@ -8,30 +8,67 @@ import { sendProductAddedPushNotification, sendProductDeletedPushNotification } 
 export async function searchProducts(query: string) {
   try {
     await connectToDatabase();
+    const trimmed = (query || '').trim();
+    if (!trimmed) {
+      return getAllProducts();
+    }
+
+    // Safely escape regex special characters (e.g. parentheses, brackets, hyphens)
+    const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const qLower = trimmed.toLowerCase();
+
     const products = await Product.find({
       $or: [
-        { title: { $regex: query, $options: 'i' } },
-        { 'variants.sku': { $regex: query, $options: 'i' } }
+        { title: { $regex: escaped, $options: 'i' } },
+        { slug: { $regex: escaped, $options: 'i' } },
+        { category: { $regex: escaped, $options: 'i' } },
+        { subCategory: { $regex: escaped, $options: 'i' } },
+        { 'variants.sku': { $regex: escaped, $options: 'i' } },
+        { 'variants.color': { $regex: escaped, $options: 'i' } },
+        { 'variants.size': { $regex: escaped, $options: 'i' } }
       ]
-    }).limit(20).lean();
+    }).limit(100).lean();
 
     const flatProducts: any[] = [];
     for (const p of products) {
-      for (const v of (p as any).variants) {
-        flatProducts.push({
-          _id: (p as any)._id,
-          name: (p as any).title,
-          slug: (p as any).slug,
-          sku: v.sku,
-          size: v.size,
-          color: v.color,
-          price: v.price,
-          costPrice: v.costPrice,
-          category: (p as any).category,
-          subCategory: (p as any).subCategory || '',
-        });
+      const pDoc = p as any;
+      const titleMatch = (pDoc.title || '').toLowerCase().includes(qLower);
+      const slugMatch = (pDoc.slug || '').toLowerCase().includes(qLower);
+      const categoryMatch = (pDoc.category || '').toLowerCase().includes(qLower);
+
+      for (const v of (pDoc.variants || [])) {
+        const skuMatch = (v.sku || '').toLowerCase().includes(qLower);
+        const colorMatch = (v.color || '').toLowerCase().includes(qLower);
+        const sizeMatch = (v.size || '').toLowerCase().includes(qLower);
+
+        if (titleMatch || slugMatch || categoryMatch || skuMatch || colorMatch || sizeMatch) {
+          flatProducts.push({
+            _id: pDoc._id.toString(),
+            name: pDoc.title,
+            slug: pDoc.slug,
+            sku: v.sku,
+            size: v.size || 'Free Size',
+            color: v.color || 'Standard',
+            price: v.price || 0,
+            costPrice: v.costPrice || 0,
+            category: pDoc.category || '',
+            subCategory: pDoc.subCategory || '',
+            isExactSku: (v.sku || '').toLowerCase() === qLower,
+            isSkuMatch: skuMatch
+          });
+        }
       }
     }
+
+    // Sort exact SKU matches first, then partial SKU matches, then others
+    flatProducts.sort((a, b) => {
+      if (a.isExactSku && !b.isExactSku) return -1;
+      if (!a.isExactSku && b.isExactSku) return 1;
+      if (a.isSkuMatch && !b.isSkuMatch) return -1;
+      if (!a.isSkuMatch && b.isSkuMatch) return 1;
+      return 0;
+    });
+
     return JSON.parse(JSON.stringify(flatProducts));
   } catch (error) {
     console.error('Failed to search products:', error);
@@ -42,20 +79,20 @@ export async function searchProducts(query: string) {
 export async function getAllProducts() {
   try {
     await connectToDatabase();
-    const products = await Product.find({ isActive: true }).sort({ createdAt: -1 }).limit(50).lean();
+    const products = await Product.find({ isActive: { $ne: false } }).sort({ createdAt: -1 }).limit(100).lean();
     
     const flatProducts: any[] = [];
     for (const p of products) {
-      for (const v of (p as any).variants) {
+      for (const v of ((p as any).variants || [])) {
         flatProducts.push({
-          _id: (p as any)._id,
+          _id: (p as any)._id.toString(),
           name: (p as any).title,
           slug: (p as any).slug,
           sku: v.sku,
-          size: v.size,
-          color: v.color,
-          price: v.price,
-          costPrice: v.costPrice,
+          size: v.size || 'Free Size',
+          color: v.color || 'Standard',
+          price: v.price || 0,
+          costPrice: v.costPrice || 0,
           category: (p as any).category,
           subCategory: (p as any).subCategory || '',
         });
