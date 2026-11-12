@@ -1071,10 +1071,11 @@ export default function POSPage() {
                   print-color-adjust: exact !important;
                 }
                 .print-area { 
-                  width: 74mm !important; 
-                  max-width: 74mm !important; 
+                  box-sizing: border-box !important;
+                  width: 72mm !important; 
+                  max-width: 72mm !important; 
                   margin: 0 auto !important; 
-                  padding: 6mm 2mm 8mm 2mm !important; 
+                  padding: 6mm 5mm 8mm 5mm !important; 
                   border: none !important; 
                   box-shadow: none !important; 
                   page-break-inside: avoid !important; 
@@ -1090,17 +1091,17 @@ export default function POSPage() {
                 }
               `}
             </style>
-            <div className="print-area w-full bg-white p-6 rounded-2xl font-sans text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
+            <div className="print-area w-full bg-white p-6 rounded-2xl font-sans text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none relative overflow-hidden">
               {/* Store Header */}
               <div className="text-center mb-5">
-                <h3 className="text-[22px] font-black text-black tracking-widest uppercase leading-none font-sans">
+                <h3 className="text-[20px] font-bold text-black tracking-widest uppercase leading-none font-sans">
                   {posContext.outletName}
                 </h3>
-                <p className="text-[13px] font-bold text-black mt-1">
+                <p className="text-[12px] font-semibold text-black mt-1">
                   {posContext.outletLocation}
                 </p>
                 
-                <div className="text-[12px] font-bold text-black mt-2 space-y-0.5">
+                <div className="text-[11px] font-medium text-black mt-2 space-y-0.5">
                   <p>{new Date().toLocaleDateString('en-GB')} &nbsp;•&nbsp; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   <p>Invoice: {completedInvoiceId} &nbsp;•&nbsp; Cashier: {posContext.cashierName}</p>
                   {customerPhone && <p>Customer: {customerPhone}</p>}
@@ -1108,14 +1109,14 @@ export default function POSPage() {
               </div>
 
               {/* Items Section */}
-              <div className="space-y-3 mb-4">
+              <div className="space-y-2.5 mb-4">
                 {cartItems.map(item => (
                   <div key={item.id} className="flex justify-between items-start text-black">
                     <div className="pr-2 leading-tight">
-                      <p className="text-[14px] font-bold text-black">{item.name}</p>
-                      <p className="text-[12px] font-bold text-black mt-0.5">{item.qty} × Tk {item.price}</p>
+                      <p className="text-[13px] font-semibold text-black">{item.name}</p>
+                      <p className="text-[11px] font-medium text-black mt-0.5">{item.qty} × Tk {item.price}</p>
                     </div>
-                    <span className="text-[14px] font-black text-black shrink-0">
+                    <span className="text-[13px] font-bold text-black shrink-0">
                       Tk {item.price * item.qty}
                     </span>
                   </div>
@@ -1123,7 +1124,7 @@ export default function POSPage() {
               </div>
 
               {/* Totals Section */}
-              <div className="space-y-1.5 py-2 mb-4 text-[13px] font-bold text-black">
+              <div className="space-y-1.5 py-2 mb-4 text-[12px] font-semibold text-black">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>Tk {subtotal}</span>
@@ -1141,15 +1142,15 @@ export default function POSPage() {
                   </div>
                 )}
                 
-                <div className="flex justify-between items-baseline text-[20px] font-black text-black pt-2 mt-1">
-                  <span>TOTAL</span>
-                  <span>Tk {total}</span>
+                <div className="flex justify-between items-baseline text-[17px] font-bold text-black pt-2 mt-1">
+                  <span className="tracking-wider">TOTAL</span>
+                  <span className="text-[18px]">Tk {total}</span>
                 </div>
               </div>
 
               {/* Payment Method & Barcode */}
               <div className="text-center pt-1">
-                <p className="text-[13px] font-black text-black uppercase tracking-wider mb-2">
+                <p className="text-[12px] font-bold text-black uppercase tracking-wider mb-2">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
@@ -1159,11 +1160,11 @@ export default function POSPage() {
                       <div className="scale-100 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
-                          width={1.5} 
-                          height={38} 
+                          width={1.4} 
+                          height={36} 
                           displayValue={true} 
-                          fontSize={12} 
-                          margin={4} 
+                          fontSize={11} 
+                          margin={2} 
                           background="transparent"
                           lineColor="#000000"
                         />
@@ -1171,8 +1172,8 @@ export default function POSPage() {
                     </div>
                   )}
                   
-                  <p className="text-[12px] font-bold text-black mt-2">Thank you for shopping at Rimal!</p>
-                  <p className="text-[11px] font-bold text-black mt-0.5">Please preserve this receipt for exchange</p>
+                  <p className="text-[11px] font-bold text-black mt-2">Thank you for shopping at Rimal!</p>
+                  <p className="text-[10px] font-medium text-black mt-0.5">Please preserve this receipt for exchange</p>
                 </div>
               </div>
             </div>
