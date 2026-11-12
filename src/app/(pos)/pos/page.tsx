@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { Search, Scan, Trash2, Minus, Plus, CreditCard, Banknote, User, Percent, X, CheckCircle2, PauseCircle, Clock, History, FileText, Loader2, Crown, Undo, LogOut, LayoutDashboard } from 'lucide-react';
+import { Search, Scan, Trash2, Minus, Plus, CreditCard, Banknote, User, Percent, X, CheckCircle2, PauseCircle, Clock, History, FileText, Loader2, Crown, Undo, LogOut, LayoutDashboard, Star } from 'lucide-react';
 import RimalCard from '@/components/rimal-ui/RimalCard';
 
 import { getPosProducts, saveSale, getSaleByInvoice, processReturn, getPosContext, getEndOfDayReport } from '@/actions/pos';
@@ -29,6 +29,7 @@ export default function POSPage() {
   const [posSettings, setPosSettings] = useState({ vatEnabled: false, vatPercentage: 0 });
   const [membershipTiers, setMembershipTiers] = useState<any[]>([]);
   const [selectedTier, setSelectedTier] = useState<string>('');
+  const [newCustomerTier, setNewCustomerTier] = useState<string>('');
 
   // Cart state
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -85,6 +86,10 @@ export default function POSPage() {
         }
         if (tiersData) {
           setMembershipTiers(tiersData);
+          const defTier = tiersData.find((t: any) => t.isDefault) || tiersData[0];
+          if (defTier) {
+            setNewCustomerTier(defTier.name);
+          }
         }
         if (contextData) {
           setPosContext(contextData as any);
@@ -399,11 +404,13 @@ export default function POSPage() {
     // Auto-save new customer if phone is 11 digits and not already a member
     if (customerPhone.length === 11 && !membershipStatus) {
       try {
+        const tierToUse = newCustomerTier || membershipTiers.find((t: any) => t.isDefault)?.name || 'Regular';
+        const tierObj = membershipTiers.find((t: any) => t.name === tierToUse);
         await createCustomer({
           name: customerName,
           phone: customerPhone,
-          tier: 'Regular',
-          discountPercent: 0
+          tier: tierToUse,
+          discountPercent: tierObj ? tierObj.discount : 0
         });
       } catch (error) {
         console.error('Failed to auto-save customer:', error);
@@ -828,6 +835,14 @@ export default function POSPage() {
                   <span className={`text-[11px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-full ${membershipStatus.tier === 'Gold' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-700'}`}>
                     <Crown className="w-3 h-3" /> {customerName} - {membershipStatus.tier} ({membershipStatus.discountPercent}% Off)
                   </span>
+                ) : customerPhone.length === 11 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomerModal(true)}
+                    className="text-[11px] font-bold text-[#33040D] hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Select Member Tier
+                  </button>
                 ) : null}
               </div>
               <div className="relative">
@@ -870,24 +885,40 @@ export default function POSPage() {
       {/* --- CUSTOMER CRM MODAL --- */}
       {showCustomerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[24px] p-6 sm:p-8 w-full max-w-[400px] shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            <button onClick={() => setShowCustomerModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-gray-900"><X className="w-5 h-5" /></button>
-            <h2 className="text-[20px] font-bold text-gray-900 mb-6 flex items-center gap-2"><User className="w-5 h-5 text-[#33040D]" /> Customer Info</h2>
+          <div className="bg-white rounded-[24px] p-6 sm:p-8 w-full max-w-[420px] shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={() => setShowCustomerModal(false)} 
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-900"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-[20px] font-bold text-gray-900 mb-5 flex items-center gap-2">
+              <User className="w-5 h-5 text-[#33040D]" /> Customer & Membership
+            </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="text-[13px] font-bold text-gray-700 block mb-2">Phone Number</label>
-                <input 
-                  type="tel" 
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="e.g. 01700000000" 
-                  autoFocus
-                  className="w-full px-4 py-3 rounded-[12px] bg-gray-50 border border-gray-200 focus:border-[#33040D] focus:ring-1 focus:ring-[#33040D] text-[14px] font-medium outline-none transition-all" 
-                />
+                <label className="text-[13px] font-bold text-gray-700 block mb-1.5">Phone Number</label>
+                <div className="relative">
+                  <input 
+                    type="tel" 
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="e.g. 01700000000" 
+                    maxLength={11}
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-[12px] bg-gray-50 border border-gray-200 focus:border-[#33040D] focus:ring-1 focus:ring-[#33040D] text-[14px] font-medium outline-none transition-all" 
+                  />
+                  {isCheckingMember && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#33040D]" />
+                    </div>
+                  )}
+                </div>
               </div>
+
               <div>
-                <label className="text-[13px] font-bold text-gray-700 block mb-2">Customer Name</label>
+                <label className="text-[13px] font-bold text-gray-700 block mb-1.5">Customer Name</label>
                 <input 
                   type="text" 
                   value={customerName === 'Walk-in Customer' ? '' : customerName}
@@ -897,54 +928,150 @@ export default function POSPage() {
                 />
               </div>
 
-              {customerId && membershipTiers.length > 0 && (
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="text-[13px] font-bold text-[#33040D] block mb-2">Request Membership Upgrade</label>
-                  <div className="flex gap-2">
-                    <select 
-                      value={selectedTier}
-                      onChange={(e) => setSelectedTier(e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-[12px] bg-gray-50 border border-gray-200 focus:border-[#33040D] focus:ring-1 focus:ring-[#33040D] text-[14px] font-medium outline-none"
-                    >
-                      <option value="">Select Tier...</option>
-                      {membershipTiers.map((tier, idx) => (
-                        <option key={idx} value={tier.name}>{tier.name} ({tier.discount}% Off)</option>
-                      ))}
-                    </select>
-                    <button 
-                      onClick={async () => {
-                        if (!selectedTier) return toast.error('Select a tier');
-                        const tierData = membershipTiers.find(t => t.name === selectedTier);
-                        if (!tierData) return;
-                        
-                        const res = await requestCustomerMembership(customerId, tierData.name, tierData.discount);
-                        if (res.success) {
-                          toast.success(res.message || 'Membership requested');
-                          setSelectedTier('');
-                          setMembershipStatus(prev => prev ? {...prev, pendingTier: tierData.name} : null);
-                        } else {
-                          toast.error(res.error || 'Failed to request membership');
-                        }
-                      }}
-                      className="px-4 py-3 bg-orange-100 text-orange-600 font-bold rounded-[12px] hover:bg-orange-200"
-                    >
-                      Request
-                    </button>
+              {/* Existing Registered Customer */}
+              {customerId ? (
+                <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-amber-900 flex items-center gap-1.5">
+                      <Crown className="w-4 h-4 text-amber-600 fill-amber-500" /> Current Membership
+                    </span>
+                    <span className="text-[12px] font-black text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                      {membershipStatus?.tier || 'Regular'} ({membershipStatus?.discountPercent || 0}% Off)
+                    </span>
                   </div>
-                  {membershipStatus?.pendingTier && (
-                    <p className="text-[11px] font-medium text-orange-500 mt-2 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Pending approval for: {membershipStatus.pendingTier}
-                    </p>
+
+                  {membershipTiers.length > 0 && (
+                    <div className="pt-2 border-t border-amber-200/60">
+                      <label className="text-[12px] font-bold text-gray-700 block mb-1.5">Request Tier Upgrade</label>
+                      <div className="flex gap-2">
+                        <select 
+                          value={selectedTier}
+                          onChange={(e) => setSelectedTier(e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-[10px] bg-white border border-gray-200 text-[13px] font-medium outline-none"
+                        >
+                          <option value="">Select Tier...</option>
+                          {membershipTiers.map((tier, idx) => (
+                            <option key={idx} value={tier.name}>{tier.name} ({tier.discount}% Off)</option>
+                          ))}
+                        </select>
+                        <button 
+                          onClick={async () => {
+                            if (!selectedTier) return toast.error('Select a tier');
+                            const tierData = membershipTiers.find(t => t.name === selectedTier);
+                            if (!tierData) return;
+                            
+                            const res = await requestCustomerMembership(customerId, tierData.name, tierData.discount);
+                            if (res.success) {
+                              toast.success(res.message || 'Membership upgrade requested');
+                              setSelectedTier('');
+                              setMembershipStatus(prev => prev ? {...prev, pendingTier: tierData.name} : null);
+                            } else {
+                              toast.error(res.error || 'Failed to request upgrade');
+                            }
+                          }}
+                          className="px-3 py-2 bg-[#33040D] text-white font-bold text-[12px] rounded-[10px] hover:bg-[#4a0614] transition-all"
+                        >
+                          Request
+                        </button>
+                      </div>
+                      {membershipStatus?.pendingTier && (
+                        <p className="text-[11px] font-bold text-orange-600 mt-2 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" /> Pending approval for: {membershipStatus.pendingTier}
+                        </p>
+                      )}
+                    </div>
                   )}
+                </div>
+              ) : (
+                /* NEW CUSTOMER: Membership Tier Selector */
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-bold text-gray-700">Membership Tier</label>
+                    <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Default Selected
+                    </span>
+                  </div>
+                  <select 
+                    value={newCustomerTier}
+                    onChange={(e) => {
+                      const chosenTier = e.target.value;
+                      setNewCustomerTier(chosenTier);
+                      const tierObj = membershipTiers.find(t => t.name === chosenTier);
+                      if (tierObj) {
+                        setDiscountValue(Math.round(subtotal * (tierObj.discount / 100)));
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-[12px] bg-gray-50 border border-gray-200 focus:border-[#33040D] focus:ring-1 focus:ring-[#33040D] text-[14px] font-bold text-gray-900 outline-none transition-all cursor-pointer"
+                  >
+                    {membershipTiers.length === 0 && <option value="Regular">Regular (0% Off)</option>}
+                    {membershipTiers.map((tier, idx) => (
+                      <option key={idx} value={tier.name}>
+                        {tier.name} ({tier.discount}% Discount){tier.isDefault ? ' — (Default Tier)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-gray-500 font-medium mt-1">
+                    Customer will be enrolled in this tier and get the corresponding discount.
+                  </p>
                 </div>
               )}
               
-              <button 
-                onClick={() => setShowCustomerModal(false)}
-                className="w-full py-3.5 mt-4 bg-[#33040D] text-white rounded-[16px] font-bold text-[15px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center"
-              >
-                Save Details
-              </button>
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerPhone('');
+                    setCustomerName('Walk-in Customer');
+                    setCustomerId(null);
+                    setMembershipStatus(null);
+                    setDiscountValue(0);
+                    setShowCustomerModal(false);
+                    toast.success('Reset to Walk-in Customer');
+                  }}
+                  className="px-4 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[16px] font-bold text-[13px] transition-all"
+                >
+                  Clear
+                </button>
+                <button 
+                  onClick={async () => {
+                    if (customerPhone && customerPhone.length === 11 && !customerId) {
+                      try {
+                        const tierToUse = newCustomerTier || membershipTiers.find((t: any) => t.isDefault)?.name || 'Regular';
+                        const tierObj = membershipTiers.find((t: any) => t.name === tierToUse);
+                        const discount = tierObj ? Number(tierObj.discount) : 0;
+                        const res = await createCustomer({
+                          name: customerName === 'Walk-in Customer' ? 'Customer ' + customerPhone.slice(-4) : customerName,
+                          phone: customerPhone,
+                          tier: tierToUse,
+                          discountPercent: discount
+                        });
+                        if (res.success && res.customer) {
+                          setCustomerId(res.customer._id);
+                          setCustomerName(res.customer.name);
+                          setMembershipStatus({
+                            tier: res.customer.tier,
+                            discountPercent: res.customer.discountPercent
+                          });
+                          setDiscountValue(Math.round(subtotal * (res.customer.discountPercent / 100)));
+                          toast.success(`Customer saved as ${res.customer.tier} member!`);
+                          setShowCustomerModal(false);
+                          return;
+                        } else if (res.error) {
+                          toast.error(res.error);
+                          return;
+                        }
+                      } catch (err) {
+                        console.error('Failed to create customer from modal:', err);
+                      }
+                    }
+                    setShowCustomerModal(false);
+                    toast.success('Customer details applied');
+                  }}
+                  className="flex-1 py-3.5 bg-[#33040D] text-white rounded-[16px] font-bold text-[14px] shadow-[0_8px_20px_rgba(51,4,13,0.25)] hover:shadow-[0_8px_25px_rgba(51,4,13,0.35)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Save & Apply
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -53,12 +53,13 @@ export default function CustomersPage() {
       });
     } else {
       setEditingId(null);
+      const defaultTier = membershipTiers.find((t: any) => t.isDefault) || membershipTiers[0] || { name: 'Regular', discount: 0 };
       setFormData({
         name: '',
         phone: '',
         email: '',
-        tier: 'Regular',
-        discountPercent: 0,
+        tier: defaultTier.name,
+        discountPercent: Number(defaultTier.discount) || 0,
         isActive: true
       });
     }
@@ -350,9 +351,11 @@ export default function CustomersPage() {
                     }}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#33040D]/20 outline-none bg-white"
                   >
-                    {membershipTiers.length === 0 && <option value="Regular">Regular</option>}
+                    {membershipTiers.length === 0 && <option value="Regular">Regular (Default)</option>}
                     {membershipTiers.map((tier, idx) => (
-                      <option key={idx} value={tier.name}>{tier.name} ({tier.discount}% Off)</option>
+                      <option key={idx} value={tier.name}>
+                        {tier.name} ({tier.discount}% Off){tier.isDefault ? ' - Default' : ''}
+                      </option>
                     ))}
                   </select>
               </div>

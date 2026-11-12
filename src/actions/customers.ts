@@ -53,14 +53,16 @@ export async function createCustomer(data: any) {
     }
 
     const tiers = await getMembershipTiers();
-    const tierData = tiers.find((t: any) => t.name === (data.tier || 'Regular'));
-    const discount = tierData ? Number(tierData.discount) : 0;
+    const defaultTier = tiers.find((t: any) => t.isDefault) || tiers[0] || { name: 'Regular', discount: 0 };
+    const tierName = data.tier || defaultTier.name;
+    const tierData = tiers.find((t: any) => t.name === tierName);
+    const discount = tierData ? Number(tierData.discount) : (Number(data.discountPercent) || 0);
 
     const customer = await Customer.create({
       name: data.name,
       phone: data.phone,
       email: data.email,
-      tier: data.tier || 'Regular',
+      tier: tierName,
       discountPercent: discount,
       isActive: data.isActive !== undefined ? data.isActive : true,
     });
