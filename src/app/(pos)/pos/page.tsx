@@ -1060,63 +1060,113 @@ export default function POSPage() {
             <style type="text/css" media="print">
               {`
                 @page { size: portrait; margin: 0; }
-                body { margin: 0; padding: 0; background: white; }
-                .print-area { width: 80mm !important; max-width: 80mm !important; margin: 0 auto !important; padding: 0mm 5mm !important; border: none !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; overflow: hidden !important; }
+                body { 
+                  margin: 0; 
+                  padding: 0; 
+                  background: white; 
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                .print-area { 
+                  width: 78mm !important; 
+                  max-width: 78mm !important; 
+                  margin: 0 auto !important; 
+                  padding: 4mm 3mm !important; 
+                  border: none !important; 
+                  box-shadow: none !important; 
+                  page-break-inside: avoid !important; 
+                  break-inside: avoid !important; 
+                  overflow: hidden !important; 
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                  color: #000000 !important;
+                }
+                .print-area * {
+                  color: #000000 !important;
+                  box-shadow: none !important;
+                }
               `}
             </style>
-            <div className="print-area w-full bg-white p-5 rounded-xl font-mono text-[12px] font-normal text-black border border-gray-300 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
-              <div className="text-center mb-3 pb-3 border-b border-black print:mb-2 print:pb-2">
-                <h3 className="text-[16px] font-bold text-black font-sans tracking-wider uppercase">{posContext.outletName}</h3>
-                <p className="text-[11px] font-normal text-black">{posContext.outletLocation}</p>
-                <p className="text-[11px] font-normal text-black">Date: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                <p className="text-[11px] font-normal text-black">Cashier: {posContext.cashierName}</p>
-                {customerPhone && <p className="text-[11px] font-normal text-black mt-0.5">Customer: {customerPhone}</p>}
+            <div className="print-area w-full bg-white p-5 rounded-2xl font-sans text-[12px] text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none print:p-0 relative overflow-hidden">
+              {/* Store Header */}
+              <div className="text-center mb-4">
+                <h3 className="text-[18px] font-black text-black tracking-widest uppercase font-sans">{posContext.outletName}</h3>
+                <p className="text-[11px] font-medium text-black mt-0.5">{posContext.outletLocation}</p>
+                <div className="text-[10px] text-black font-medium mt-1 flex justify-center items-center gap-2">
+                  <span>{new Date().toLocaleDateString('en-GB')}</span>
+                  <span>•</span>
+                  <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="text-[10px] text-black font-medium mt-0.5 flex justify-center items-center gap-2">
+                  <span>Inv: {completedInvoiceId}</span>
+                  <span>•</span>
+                  <span>Cashier: {posContext.cashierName}</span>
+                </div>
+                {customerPhone && <p className="text-[10px] text-black font-medium mt-0.5">Customer: {customerPhone}</p>}
               </div>
 
-              <div className="space-y-1.5 border-b border-black pb-3 mb-3 print:pb-2 print:mb-2">
+              {/* Items Section (clean without harsh long lines) */}
+              <div className="space-y-2 mb-3">
                 {cartItems.map(item => (
-                  <div key={item.id} className="flex justify-between text-[11px]">
-                    <span className="truncate pr-3 font-normal text-black">{item.qty}x {item.name}</span>
-                    <span className="font-medium text-black shrink-0">৳{item.price * item.qty}</span>
+                  <div key={item.id} className="flex justify-between items-baseline text-[12px]">
+                    <div className="pr-3 leading-snug">
+                      <span className="font-semibold text-black">{item.name}</span>
+                      <span className="text-[10px] text-black/75 block">{item.qty} × ৳{item.price}</span>
+                    </div>
+                    <span className="font-bold text-black shrink-0">৳{item.price * item.qty}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-1 border-b border-black pb-3 mb-3 print:pb-2 print:mb-2 text-[11px] font-normal text-black">
-                <div className="flex justify-between"><span>Subtotal</span><span>৳{subtotal}</span></div>
+              {/* Totals Section */}
+              <div className="space-y-1 py-2 mb-3 text-[11px] text-black">
+                <div className="flex justify-between font-normal">
+                  <span>Subtotal</span>
+                  <span>৳{subtotal}</span>
+                </div>
                 {posSettings.vatEnabled && (
-                  <div className="flex justify-between"><span>Tax ({posSettings.vatPercentage}%)</span><span>৳{tax}</span></div>
+                  <div className="flex justify-between font-normal">
+                    <span>Tax ({posSettings.vatPercentage}%)</span>
+                    <span>৳{tax}</span>
+                  </div>
                 )}
-                {discountValue > 0 && <div className="flex justify-between"><span>Discount</span><span>-৳{discountValue}</span></div>}
-                <div className="flex justify-between text-[14px] font-bold text-black mt-2 pt-2 border-t border-black">
-                  <span>TOTAL</span><span>৳{total}</span>
+                {discountValue > 0 && (
+                  <div className="flex justify-between font-normal">
+                    <span>Discount</span>
+                    <span>-৳{discountValue}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-baseline text-[16px] font-black text-black pt-2 mt-1">
+                  <span>TOTAL</span>
+                  <span>৳{total}</span>
                 </div>
               </div>
 
+              {/* Payment Method & Barcode */}
               <div className="text-center">
-                <p className="text-[11px] font-semibold text-black">
+                <p className="text-[11px] font-bold text-black uppercase tracking-wider mb-2">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   {completedInvoiceId && (
-                    <div className="flex justify-center mt-2 mb-1 w-full overflow-hidden">
-                      <div className="scale-90 origin-center">
+                    <div className="flex justify-center my-2 w-full overflow-hidden">
+                      <div className="scale-95 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
-                          width={1.2} 
-                          height={32} 
+                          width={1.3} 
+                          height={34} 
                           displayValue={true} 
                           fontSize={10} 
                           margin={4} 
                           background="transparent"
-                          lineColor="#000"
+                          lineColor="#000000"
                         />
                       </div>
                     </div>
                   )}
                   
-                  <p className="text-[10px] mt-1 text-black font-normal">Thank you for shopping at Rimal!</p>
+                  <p className="text-[11px] font-semibold text-black mt-2">Thank you for shopping at Rimal!</p>
+                  <p className="text-[9px] text-black/70 mt-0.5">Please preserve this receipt for exchange</p>
                 </div>
               </div>
             </div>
