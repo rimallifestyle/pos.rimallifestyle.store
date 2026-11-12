@@ -18,12 +18,18 @@ export default function BarcodeCenterPage() {
   
   const [printQueue, setPrintQueue] = useState<any[]>([]);
   const [orientation, setOrientation] = useState<'normal' | 'rotate90' | 'rotate270'>('normal');
+  const [topOffset, setTopOffset] = useState<number>(3); // Default 3mm down from top
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('rimal_barcode_orientation');
       if (saved === 'normal' || saved === 'rotate90' || saved === 'rotate270') {
         setOrientation(saved);
+      }
+      const savedTop = localStorage.getItem('rimal_barcode_top_offset');
+      if (savedTop !== null) {
+        const num = Number(savedTop);
+        if (!isNaN(num)) setTopOffset(num);
       }
     } catch (e) {}
   }, []);
@@ -32,6 +38,14 @@ export default function BarcodeCenterPage() {
     setOrientation(val);
     try {
       localStorage.setItem('rimal_barcode_orientation', val);
+    } catch (e) {}
+  };
+
+  const handleTopOffsetChange = (val: number) => {
+    const clamped = Math.max(0, Math.min(15, val));
+    setTopOffset(clamped);
+    try {
+      localStorage.setItem('rimal_barcode_top_offset', String(clamped));
     } catch (e) {}
   };
 
@@ -336,6 +350,36 @@ export default function BarcodeCenterPage() {
                   </div>
                 </div>
 
+                {/* Top Offset / Vertical Nudge */}
+                <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
+                    Top Offset (টপ থেকে নিচে):
+                  </span>
+                  <div className="flex items-center bg-gray-100 p-1 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleTopOffsetChange(topOffset - 1)}
+                      disabled={topOffset <= 0}
+                      className="w-7 h-7 rounded-lg bg-white disabled:opacity-40 flex items-center justify-center font-bold text-gray-700 shadow-sm hover:text-[#33040D] cursor-pointer"
+                      title="উপরে নাও (-1mm)"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-bold text-[#33040D] px-2 min-w-[50px] text-center">
+                      +{topOffset} mm
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTopOffsetChange(topOffset + 1)}
+                      disabled={topOffset >= 15}
+                      className="w-7 h-7 rounded-lg bg-white disabled:opacity-40 flex items-center justify-center font-bold text-gray-700 shadow-sm hover:text-[#33040D] cursor-pointer"
+                      title="নিচে নাও (+1mm)"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
                 <button 
                   onClick={handlePrint}
                   disabled={totalLabels === 0}
@@ -380,10 +424,13 @@ export default function BarcodeCenterPage() {
                   key={`${item.sku}-${i}`} 
                   className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-full print:h-[100vh] print:min-h-[100vh] print:flex print:flex-col print:items-center print:justify-center print:mx-auto print:overflow-hidden"
                 >
-                  <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none print:mx-auto">
+                  <div 
+                    className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none print:mx-auto transition-transform duration-150"
+                    style={{ transform: `translateY(${topOffset}mm)` }}
+                  >
                     
                     <div 
-                      className="w-full h-full flex flex-col items-center justify-center px-1 py-0.5 text-center box-border"
+                      className="w-full h-full flex flex-col items-center justify-center px-1 pt-1 pb-0.5 text-center box-border"
                       style={{
                         transform: orientation === 'rotate90' 
                           ? 'rotate(90deg) scale(0.66)' 
