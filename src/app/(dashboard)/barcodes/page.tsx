@@ -144,17 +144,21 @@ export default function BarcodeCenterPage() {
           }
           .barcode-page-wrapper {
             width: 100% !important;
-            min-height: 1in !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+            max-height: 100vh !important;
             display: flex !important;
+            flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            margin: 0 auto !important;
+            margin: 0 !important;
             padding: 0 !important;
             page-break-after: always !important;
             break-after: page !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             box-sizing: border-box !important;
+            overflow: hidden !important;
           }
           .barcode-page-wrapper:last-child {
             page-break-after: auto !important;
@@ -169,7 +173,7 @@ export default function BarcodeCenterPage() {
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            margin: 0 auto !important;
+            margin: auto !important;
             padding: 0 !important;
             box-sizing: border-box !important;
             text-align: center !important;
@@ -374,7 +378,7 @@ export default function BarcodeCenterPage() {
               Array.from({ length: item.qty }).map((_, i) => (
                 <div 
                   key={`${item.sku}-${i}`} 
-                  className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-full print:min-h-[1in] print:flex print:items-center print:justify-center print:mx-auto print:overflow-hidden"
+                  className="barcode-page-wrapper transform scale-[1.5] origin-top mb-14 mt-4 print:transform-none print:scale-100 print:mb-0 print:mt-0 print:w-full print:h-[100vh] print:min-h-[100vh] print:flex print:flex-col print:items-center print:justify-center print:mx-auto print:overflow-hidden"
                 >
                   <div className="barcode-sticker w-[1.5in] h-[1in] overflow-hidden bg-white border border-gray-300 rounded shadow-sm mx-auto print:border-none print:rounded-none print:shadow-none box-border flex items-center justify-center p-0 select-none print:mx-auto">
                     
