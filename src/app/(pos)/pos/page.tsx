@@ -410,9 +410,38 @@ export default function POSPage() {
     
     const result = await saveSale(saleData);
     if (result.success) {
+      // Immediately deduct stock locally in POS products list
+      const soldItemsMap = new Map<string, number>();
+      cartItems.forEach(item => {
+        soldItemsMap.set(item.id, (soldItemsMap.get(item.id) || 0) + item.qty);
+        if (item.sku) {
+          soldItemsMap.set(item.sku, (soldItemsMap.get(item.sku) || 0) + item.qty);
+        }
+      });
+
+      setProducts(prevProducts =>
+        prevProducts.map(p => {
+          const soldQty = soldItemsMap.get(p.id) || (p.sku ? soldItemsMap.get(p.sku) : 0) || 0;
+          if (soldQty > 0) {
+            return {
+              ...p,
+              stock: Math.max(0, (Number(p.stock) || 0) - soldQty)
+            };
+          }
+          return p;
+        })
+      );
+
       setCompletedInvoiceId(result.invoiceId || '');
       setShowPaymentModal(false); 
       setShowReceiptModal(true); 
+
+      // Background sync to ensure complete synchronization with database
+      getPosProducts().then(fresh => {
+        if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+          setProducts(fresh);
+        }
+      }).catch(err => console.error('Failed to sync POS products:', err));
     } else {
       toast.error('Failed to save sale. Please try again.');
     }
@@ -967,6 +996,11 @@ export default function POSPage() {
                   setCustomerName('Walk-in Customer');
                   setDiscountValue(0);
                   setPaymentType('Cash');
+                  getPosProducts().then(fresh => {
+                    if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+                      setProducts(fresh);
+                    }
+                  }).catch(err => console.error('Failed to reload products:', err));
                 }} 
                 className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-[14px] hover:bg-gray-200 transition-colors"
               >
@@ -1059,6 +1093,11 @@ export default function POSPage() {
                         setReturnSaleData(null);
                         setReturnInvoiceId('');
                         setShowReturnModal(false);
+                        getPosProducts().then(fresh => {
+                          if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+                            setProducts(fresh);
+                          }
+                        }).catch(err => console.error('Failed to reload products:', err));
                       } else {
                         toast.error(res.error || 'Failed to process return');
                       }

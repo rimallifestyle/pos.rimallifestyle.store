@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISaleItem {
   productId: mongoose.Types.ObjectId;
+  sku?: string;
   quantity: number;
   priceAtSale: number;
 }
@@ -25,6 +26,7 @@ export interface ISale extends Document {
 
 const SaleItemSchema = new Schema({
   productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  sku: { type: String },
   quantity: { type: Number, required: true },
   priceAtSale: { type: Number, required: true },
 });

@@ -46,12 +46,23 @@ export async function getPosContext() {
 export async function getPosProducts(outletId?: string | null) {
   try {
     await dbConnect();
+    let targetOutletId = outletId;
+    if (targetOutletId === undefined) {
+      const session = await getCurrentSession();
+      if (session) {
+        const user = await User.findById(session.id).lean();
+        targetOutletId = user?.outletId ? user.outletId.toString() : null;
+      } else {
+        targetOutletId = null;
+      }
+    }
+
     const products = await Product.find({ isActive: true }).lean();
     
     // Determine inventory query (global vs specific outlet)
     let inventoryQuery: any = {};
-    if (outletId) {
-      inventoryQuery.outletId = outletId;
+    if (targetOutletId) {
+      inventoryQuery.outletId = targetOutletId;
     } else {
       inventoryQuery.outletId = null; // Master warehouse
     }
@@ -102,35 +113,101 @@ export async function getPosProducts(outletId?: string | null) {
 export async function saveSale(data: any) {
   try {
     await dbConnect();
-    // Create Sale
-    const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-    // Decrease inventory
-    for (const item of data.items) {
-      await Inventory.findOneAndUpdate(
-        { "sku": item.sku },
-        { $inc: { quantity: -item.quantity } }
-      );
-    }
-    
     const session = await getCurrentSession();
     const user = session ? await User.findById(session.id).lean() : null;
+    const outletId = user?.outletId || null;
+
+    // Create Sale invoiceId
+    const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    // Decrease stock for each sold item across Product.variants, Product.totalStock, and Inventory
+    for (const item of data.items) {
+      const soldQty = Number(item.quantity) || 1;
+
+      // 1. Find Product by productId or variant SKU
+      let product: any = null;
+      if (item.productId) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product && item.sku) {
+        product = await Product.findOne({ 'variants.sku': item.sku });
+      }
+
+      let variantFound: any = null;
+      if (product && product.variants) {
+        variantFound = product.variants.find((v: any) => v.sku === item.sku);
+        if (variantFound) {
+          variantFound.quantity = Math.max(0, (Number(variantFound.quantity) || 0) - soldQty);
+        }
+        // Recalculate totalStock
+        product.totalStock = product.variants.reduce(
+          (acc: number, curr: any) => acc + (Number(curr.quantity) || 0),
+          0
+        );
+        await product.save();
+      }
+
+      // 2. Update Inventory record for this outlet (or master warehouse if outletId is null)
+      if (outletId) {
+        const outletInv = await Inventory.findOne({ sku: item.sku, outletId });
+        if (outletInv) {
+          outletInv.quantity = Math.max(0, (Number(outletInv.quantity) || 0) - soldQty);
+          outletInv.lastRestocked = new Date();
+          await outletInv.save();
+        } else {
+          // If no outlet inventory existed, create one with remaining variant stock
+          if (product) {
+            await Inventory.create({
+              productId: product._id,
+              sku: item.sku,
+              outletId: outletId,
+              quantity: variantFound ? variantFound.quantity : 0,
+              lastRestocked: new Date()
+            });
+          }
+          // Also decrement master warehouse if it exists
+          const whInv = await Inventory.findOne({ sku: item.sku, outletId: null });
+          if (whInv) {
+            whInv.quantity = Math.max(0, (Number(whInv.quantity) || 0) - soldQty);
+            whInv.lastRestocked = new Date();
+            await whInv.save();
+          }
+        }
+      } else {
+        // Master warehouse sale
+        const whInv = await Inventory.findOne({ sku: item.sku, outletId: null });
+        if (whInv) {
+          whInv.quantity = Math.max(0, (Number(whInv.quantity) || 0) - soldQty);
+          whInv.lastRestocked = new Date();
+          await whInv.save();
+        } else if (product) {
+          await Inventory.create({
+            productId: product._id,
+            sku: item.sku,
+            outletId: null,
+            quantity: variantFound ? variantFound.quantity : 0,
+            lastRestocked: new Date()
+          });
+        }
+      }
+    }
     
     const newSale = await Sale.create({
       invoiceId,
-      outletId: user?.outletId || null,
+      outletId: outletId,
       cashierId: session?.id || null,
       customerName: data.customerName,
       customerPhone: data.customerPhone,
       items: data.items.map((i: any) => ({
         productId: i.productId,
+        sku: i.sku,
         quantity: i.quantity,
         priceAtSale: i.price
       })),
       subtotal: data.subtotal,
       discount: data.discount,
       total: data.total,
-      paymentMethod: data.paymentMethod === 'Cash' ? 'CASH' : 'CARD',
+      paymentMethod: data.paymentMethod === 'Cash' ? 'CASH' : data.paymentMethod === 'MFS' ? 'MFS' : 'CARD',
       paymentProvider: data.paymentProvider,
       status: 'COMPLETED'
     });
@@ -173,10 +250,11 @@ export async function getSaleByInvoice(invoiceId: string) {
     // Process items
     const processedSale = {
       ...sale,
-      _id: sale._id.toString(),
-      items: sale.items.map((item: any) => ({
+      _id: (sale as any)._id.toString(),
+      items: (sale as any).items.map((item: any) => ({
         id: item._id?.toString(),
         productId: item.productId?._id?.toString(),
+        sku: item.sku || '',
         name: item.productId?.title || 'Unknown Product',
         price: item.priceAtSale,
         quantity: item.quantity,
@@ -193,12 +271,62 @@ export async function getSaleByInvoice(invoiceId: string) {
 export async function processReturn(invoiceId: string) {
   try {
     await dbConnect();
-    const sale = await mongoose.models.Sale.findOne({ invoiceId });
+    const sale = await Sale.findOne({ invoiceId });
     if (!sale) return { success: false, error: 'Invoice not found' };
     if (sale.status === 'REFUNDED') return { success: false, error: 'Already refunded' };
     
     sale.status = 'REFUNDED';
     await sale.save();
+    
+    // Restock items in both Product.variants, Product.totalStock, and Inventory
+    for (const item of (sale.items || [])) {
+      const returnQty = Number(item.quantity) || 1;
+      
+      let product: any = null;
+      if (item.productId) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product && item.sku) {
+        product = await Product.findOne({ 'variants.sku': item.sku });
+      }
+
+      if (product && product.variants) {
+        const variant = product.variants.find((v: any) => v.sku === item.sku);
+        if (variant) {
+          variant.quantity = (Number(variant.quantity) || 0) + returnQty;
+        }
+        product.totalStock = product.variants.reduce(
+          (acc: number, curr: any) => acc + (Number(curr.quantity) || 0),
+          0
+        );
+        await product.save();
+      }
+
+      // Restock Inventory record
+      if (item.sku) {
+        const invFilter: any = { sku: item.sku };
+        if (sale.outletId) {
+          invFilter.outletId = sale.outletId;
+        } else {
+          invFilter.outletId = null;
+        }
+
+        const inv = await Inventory.findOne(invFilter);
+        if (inv) {
+          inv.quantity = (Number(inv.quantity) || 0) + returnQty;
+          inv.lastRestocked = new Date();
+          await inv.save();
+        } else if (product) {
+          await Inventory.create({
+            productId: product._id,
+            sku: item.sku,
+            outletId: sale.outletId || null,
+            quantity: returnQty,
+            lastRestocked: new Date()
+          });
+        }
+      }
+    }
     
     return { success: true };
   } catch (error) {
