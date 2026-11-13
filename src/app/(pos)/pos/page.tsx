@@ -592,11 +592,12 @@ export default function POSPage() {
       {/* Left Column - Product Grid */}
       <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full animate-on-load print:hidden">
         
-        {/* POS Header / Search */}
-        <div className="relative z-30 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="relative flex-1 w-full">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+        {/* POS Header / Search & Actions */}
+        <div className="relative z-30 flex flex-col md:flex-row md:items-center gap-3 md:gap-3.5 mb-4 md:mb-5">
+          {/* POS Search & Scan Bar */}
+          <div className="relative flex-1 w-full min-w-[200px]">
+            <div className="absolute inset-y-0 left-0 pl-3.5 md:pl-4 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 md:h-[18px] md:w-[18px] text-gray-400" />
             </div>
             <input
               ref={searchInputRef}
@@ -606,44 +607,67 @@ export default function POSPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchEnter}
-              className="block w-full pl-10 md:pl-12 pr-12 md:pr-4 py-3 md:py-4 border border-gray-200 md:border-0 rounded-xl md:rounded-[20px] text-[13px] md:text-[15px] bg-white shadow-sm md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-[#33040D]/20 font-medium placeholder-gray-400 outline-none transition-all"
+              className="block w-full h-11 md:h-12 pl-10 md:pl-11 pr-24 md:pr-28 border border-gray-200/90 rounded-xl md:rounded-2xl text-[13px] md:text-[14px] bg-white shadow-xs focus:ring-2 focus:ring-[#33040D]/10 focus:border-[#33040D] font-medium placeholder:text-gray-400 outline-none transition-all"
               placeholder="Scan barcode or search..."
             />
-            <button className="absolute inset-y-1.5 md:inset-y-2 right-1.5 md:right-2 w-10 md:w-auto md:px-4 bg-[#33040D]/5 text-[#33040D] rounded-lg md:rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center justify-center gap-2 font-bold text-[13px]">
-              <Scan className="w-4 h-4" /> <span className="hidden md:inline whitespace-nowrap">Scan Mode</span>
+            <button 
+              type="button"
+              className="absolute inset-y-1.5 right-1.5 px-2.5 md:px-3 bg-[#33040D]/5 text-[#33040D] rounded-lg md:rounded-xl hover:bg-[#33040D]/10 transition-colors flex items-center justify-center gap-1.5 font-bold text-[11px] md:text-[12px]"
+            >
+              <Scan className="w-3.5 h-3.5" /> 
+              <span className="hidden sm:inline whitespace-nowrap">Scan Mode</span>
             </button>
           </div>
 
-          {/* End of Day / Utilities */}
-          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0 flex-1 md:flex-initial">
+          {/* Action & Utility Buttons */}
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end shrink-0">
+            {/* Operational Actions */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 md:pb-0 hide-scrollbar flex-1 md:flex-initial">
+              <button 
+                onClick={() => setShowReturnModal(true)}
+                className="h-11 md:h-12 px-3.5 md:px-4 rounded-xl md:rounded-2xl bg-white hover:bg-gray-50 border border-gray-200/90 text-gray-700 hover:text-gray-900 font-semibold text-[12px] md:text-[13px] shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 group"
+              >
+                <Undo className="w-4 h-4 text-gray-500 group-hover:text-gray-800 transition-colors shrink-0" />
+                <span className="whitespace-nowrap">Return</span>
+              </button>
+
+              <button 
+                onClick={handleEndOfDayClick}
+                disabled={isGeneratingReport}
+                className="h-11 md:h-12 px-4 md:px-5 rounded-xl md:rounded-2xl bg-[#33040D] hover:bg-[#4a0614] text-white font-semibold text-[12px] md:text-[13px] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 disabled:opacity-70"
+              >
+                {isGeneratingReport ? (
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                ) : (
+                  <FileText className="w-4 h-4 shrink-0" />
+                )}
+                <span className="whitespace-nowrap">End of Day</span>
+              </button>
+            </div>
+
+            {/* Subtle Vertical Divider (Desktop) */}
+            <div className="h-6 w-px bg-gray-200 hidden md:block shrink-0 mx-0.5" />
+
+            {/* System Utilities (Notification Bell & Logout) */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative z-50 shrink-0">
+                <NotificationBell 
+                  align="right" 
+                  buttonClassName="relative h-11 md:h-12 w-11 md:w-12 rounded-xl md:rounded-2xl bg-white hover:bg-gray-50 border border-gray-200/90 text-gray-600 hover:text-[#33040D] shadow-xs hover:shadow-sm flex items-center justify-center transition-all shrink-0 active:scale-95"
+                />
+              </div>
+
               <button 
                 onClick={async () => {
                   await logoutUser();
                   router.push('/admin/login');
                 }}
-                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0"
+                className="h-11 md:h-12 px-3.5 md:px-4 rounded-xl md:rounded-2xl bg-white hover:bg-rose-50 border border-gray-200/90 hover:border-rose-200 text-gray-600 hover:text-rose-600 font-semibold text-[12px] md:text-[13px] shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 group"
+                title="Logout"
               >
-                <LogOut className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Logout</span>
+                <LogOut className="w-4 h-4 text-gray-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                <span className="whitespace-nowrap hidden sm:inline">Logout</span>
               </button>
-              <button 
-                onClick={() => setShowReturnModal(true)}
-                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center justify-center gap-2 shrink-0"
-              >
-                <Undo className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Return</span>
-              </button>
-              <button 
-                onClick={handleEndOfDayClick}
-                disabled={isGeneratingReport}
-                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_15px_rgba(51,4,13,0.15)] md:shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] transition-all flex items-center justify-center gap-2 shrink-0"
-              >
-                {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <FileText className="w-4 h-4 shrink-0" />} <span className="whitespace-nowrap">End of Day</span>
-              </button>
-            </div>
-
-            {/* Notification Bell (Outside scroll container so dropdown is never clipped or trapped) */}
-            <div className="relative z-50 shrink-0">
-              <NotificationBell align="right" />
             </div>
           </div>
         </div>
