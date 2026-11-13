@@ -210,6 +210,36 @@ export default function POSPage() {
     return match || null;
   };
 
+  // Search invoice for return/refund automatically
+  const handleSearchInvoice = async (invoiceIdToSearch?: string) => {
+    const targetId = (invoiceIdToSearch !== undefined ? invoiceIdToSearch : returnInvoiceId).trim().toUpperCase();
+    if (!targetId) {
+      toast.error('Enter invoice ID');
+      return;
+    }
+    setReturnInvoiceId(targetId);
+    setReturnSaleData(null);
+    setIsProcessingReturn(true);
+    setShowReturnModal(true);
+
+    try {
+      const res = await getSaleByInvoice(targetId);
+      if (res.success && res.sale) {
+        setReturnSaleData(res.sale);
+      } else {
+        toast.error(res.error || `Invoice ${targetId} not found`);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch invoice:', err);
+      toast.error('Failed to fetch invoice');
+    } finally {
+      setIsProcessingReturn(false);
+    }
+  };
+
+  const handleSearchInvoiceRef = useRef(handleSearchInvoice);
+  handleSearchInvoiceRef.current = handleSearchInvoice;
+
   // Handle Enter key in the search box — this is the PRIMARY barcode handler
   // because the autoFocus input captures all scanner keystrokes.
   const handleSearchEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -221,11 +251,11 @@ export default function POSPage() {
     const raw = searchInputRef.current?.value || '';
     if (!raw.trim()) return;
 
-    if (raw.toUpperCase().trim().startsWith('INV-')) {
-      setReturnInvoiceId(raw.toUpperCase().trim());
-      setShowReturnModal(true);
+    const trimmed = raw.toUpperCase().trim();
+    if (trimmed.startsWith('INV-')) {
       setSearchQuery('');
       if (searchInputRef.current) searchInputRef.current.value = '';
+      handleSearchInvoice(trimmed);
       return;
     }
 
@@ -272,9 +302,9 @@ export default function POSPage() {
       if (e.key === 'Enter' && barcode.length >= 2) {
         e.preventDefault();
 
-        if (barcode.toUpperCase().startsWith('INV-')) {
-          setReturnInvoiceId(barcode.toUpperCase());
-          setShowReturnModal(true);
+        const trimmedBarcode = barcode.toUpperCase().trim();
+        if (trimmedBarcode.startsWith('INV-')) {
+          handleSearchInvoiceRef.current(trimmedBarcode);
         } else {
           const match = findProductBySku(barcode);
           if (match) {
@@ -607,6 +637,15 @@ export default function POSPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchEnter}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData('text').trim().toUpperCase();
+                if (pasted.startsWith('INV-')) {
+                  e.preventDefault();
+                  setSearchQuery('');
+                  if (searchInputRef.current) searchInputRef.current.value = '';
+                  handleSearchInvoice(pasted);
+                }
+              }}
               className="block w-full h-11 md:h-12 pl-10 md:pl-11 pr-24 md:pr-28 border border-gray-200/90 rounded-xl md:rounded-2xl text-[13px] md:text-[14px] bg-white shadow-xs focus:ring-2 focus:ring-[#33040D]/10 focus:border-[#33040D] font-medium placeholder:text-gray-400 outline-none transition-all"
               placeholder="Scan barcode or search..."
             />
@@ -624,7 +663,11 @@ export default function POSPage() {
             {/* Operational Actions */}
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 md:pb-0 hide-scrollbar flex-1 md:flex-initial">
               <button 
-                onClick={() => setShowReturnModal(true)}
+                onClick={() => {
+                  setReturnInvoiceId('');
+                  setReturnSaleData(null);
+                  setShowReturnModal(true);
+                }}
                 className="h-11 md:h-12 px-3.5 md:px-4 rounded-xl md:rounded-2xl bg-white hover:bg-gray-50 border border-gray-200/90 text-gray-700 hover:text-gray-900 font-semibold text-[12px] md:text-[13px] shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 group"
               >
                 <Undo className="w-4 h-4 text-gray-500 group-hover:text-gray-800 transition-colors shrink-0" />
@@ -1370,7 +1413,14 @@ export default function POSPage() {
       {showReturnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm print:hidden animate-fade-in">
           <div className="bg-white rounded-3xl p-8 w-full max-w-[500px] shadow-2xl relative overflow-hidden animate-slide-up border border-gray-100">
-            <button onClick={() => setShowReturnModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition-colors">
+            <button 
+              onClick={() => {
+                setShowReturnModal(false);
+                setReturnInvoiceId('');
+                setReturnSaleData(null);
+              }} 
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition-colors"
+            >
               <X className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-4 mb-8">
@@ -1379,7 +1429,7 @@ export default function POSPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-black text-gray-900 leading-tight">Process Return</h2>
-                <p className="text-gray-500 font-medium mt-1">Search invoice to refund items</p>
+                <p className="text-gray-500 font-medium mt-1">Scan or enter invoice to refund items</p>
               </div>
             </div>
 
@@ -1387,32 +1437,35 @@ export default function POSPage() {
               <div className="relative">
                 <input
                   type="text"
+                  autoFocus
                   value={returnInvoiceId}
                   onChange={(e) => setReturnInvoiceId(e.target.value.toUpperCase())}
-                  placeholder="Enter Invoice ID (e.g. INV-123456)"
-                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl text-[15px] font-bold focus:border-[#33040D] focus:ring-0 outline-none transition-all"
-                />
-                <button
-                  onClick={async () => {
-                    if (!returnInvoiceId) {
-                      toast.error('Enter invoice ID');
-                      return;
-                    }
-                    setIsProcessingReturn(true);
-                    const res = await getSaleByInvoice(returnInvoiceId);
-                    setIsProcessingReturn(false);
-                    if (res.success) {
-                      setReturnSaleData(res.sale);
-                    } else {
-                      toast.error(res.error || 'Failed to fetch invoice');
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchInvoice(e.currentTarget.value);
                     }
                   }}
+                  placeholder="Scan receipt or enter Invoice ID (e.g. INV-123456)"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl text-[15px] font-bold focus:border-[#33040D] focus:ring-0 outline-none transition-all pr-24"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSearchInvoice()}
                   disabled={isProcessingReturn}
-                  className="absolute right-2 top-2 bottom-2 px-4 bg-[#33040D] text-white rounded-xl font-bold hover:bg-[#4a0614] transition-colors flex items-center"
+                  className="absolute right-2 top-2 bottom-2 px-4 bg-[#33040D] text-white rounded-xl font-bold hover:bg-[#4a0614] transition-colors flex items-center justify-center min-w-[76px]"
                 >
                   {isProcessingReturn ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
                 </button>
               </div>
+
+              {/* Auto-Fetching Loading Card */}
+              {isProcessingReturn && !returnSaleData && (
+                <div className="py-10 flex flex-col items-center justify-center gap-2 bg-gray-50/70 rounded-2xl border border-gray-100 animate-in fade-in duration-150">
+                  <Loader2 className="w-7 h-7 text-[#33040D] animate-spin" />
+                  <p className="text-xs text-gray-500 font-bold">Fetching invoice details...</p>
+                </div>
+              )}
 
               {returnSaleData && (
                 <div className="mt-6 border border-gray-100 rounded-2xl p-5 bg-gray-50">
