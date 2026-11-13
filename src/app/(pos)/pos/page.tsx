@@ -59,7 +59,7 @@ export default function POSPage() {
   const [returnSaleData, setReturnSaleData] = useState<any>(null);
   const [isProcessingReturn, setIsProcessingReturn] = useState(false);
   const [completedInvoiceId, setCompletedInvoiceId] = useState('');
-  const [posContext, setPosContext] = useState({ cashierName: 'Admin', outletName: 'RIMAL.', outletLocation: 'Sector 11, Uttara (UTT-01)' });
+  const [posContext, setPosContext] = useState({ cashierName: 'Cashier', outletName: 'RIMAL.', outletLocation: 'Mirpur 13 Branch' });
   
   const [showEndOfDayModal, setShowEndOfDayModal] = useState(false);
   const [endOfDayReport, setEndOfDayReport] = useState<any>(null);

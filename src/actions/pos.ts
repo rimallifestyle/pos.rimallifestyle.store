@@ -13,23 +13,41 @@ import { sendSalePushNotification } from '@/lib/onesignal';
 export async function getPosContext() {
   try {
     const session = await getCurrentSession();
-    if (!session) return null;
+    if (!session) {
+      return {
+        cashierName: 'Cashier',
+        outletName: 'RIMAL.',
+        outletLocation: 'Mirpur 13 Branch'
+      };
+    }
     
     await dbConnect();
     
-    // Fetch user from DB to get the latest outletId (in case admin changed it while they were logged in)
+    // Fetch user from DB to get the latest outletId
     const user = await User.findById(session.id).lean();
-    if (!user) return null;
+    if (!user) {
+      return {
+        cashierName: session.name || 'Cashier',
+        outletName: 'RIMAL.',
+        outletLocation: 'Mirpur 13 Branch'
+      };
+    }
 
     let outletName = 'RIMAL.';
-    let outletLocation = 'Head Office';
+    let outletLocation = 'Mirpur 13 Branch';
     
+    let outlet: any = null;
     if (user.outletId) {
-      const outlet = await Outlet.findById(user.outletId).lean();
-      if (outlet) {
-        outletName = outlet.name;
-        outletLocation = outlet.location;
-      }
+      outlet = await Outlet.findById(user.outletId).lean();
+    }
+    if (!outlet) {
+      outlet = await Outlet.findOne({ isActive: true }).lean();
+    }
+    
+    if (outlet) {
+      outletName = 'RIMAL.';
+      const loc = outlet.location || 'Mirpur 13';
+      outletLocation = loc.toLowerCase().includes('branch') ? loc : `${loc} Branch`;
     }
     
     return {
@@ -39,7 +57,11 @@ export async function getPosContext() {
     };
   } catch (error) {
     console.error('Failed to get POS context:', error);
-    return null;
+    return {
+      cashierName: 'Cashier',
+      outletName: 'RIMAL.',
+      outletLocation: 'Mirpur 13 Branch'
+    };
   }
 }
 
@@ -115,7 +137,13 @@ export async function saveSale(data: any) {
     await dbConnect();
     const session = await getCurrentSession();
     const user = session ? await User.findById(session.id).lean() : null;
-    const outletId = user?.outletId || null;
+    let outletId = user?.outletId || null;
+    if (!outletId) {
+      const activeOutlet = await Outlet.findOne({ isActive: true }).lean();
+      if (activeOutlet) {
+        outletId = activeOutlet._id;
+      }
+    }
 
     // Create Sale invoiceId
     const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`;

@@ -85,7 +85,7 @@ export async function getDashboardStats() {
       id: s._id.toString(),
       type: 'sale',
       invoiceId: s.invoiceId,
-      outlet: s.outletId?.name || 'Head Office',
+      outlet: s.outletId?.name || s.outletId?.location || 'Mirpur 13 Branch',
       amount: s.total || 0,
       itemCount: s.items?.reduce((acc: number, i: any) => acc + (i.quantity || 1), 0) || s.items?.length || 1,
       customer: s.customerName || 'Walk-in Customer',
