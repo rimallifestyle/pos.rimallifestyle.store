@@ -1196,19 +1196,23 @@ export default function POSPage() {
                   background: #ffffff !important; 
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
+                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+                }
+                .print-area, .print-area * { 
+                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+                  -webkit-font-smoothing: antialiased !important;
                 }
                 .print-area { 
                   box-sizing: border-box !important;
                   width: 72mm !important; 
                   max-width: 72mm !important; 
                   margin: 0 auto !important; 
-                  padding: 6mm 5mm 8mm 5mm !important; 
+                  padding: 5mm 5mm 8mm 5mm !important; 
                   border: none !important; 
                   box-shadow: none !important; 
                   page-break-inside: avoid !important; 
                   break-inside: avoid !important; 
                   overflow: hidden !important; 
-                  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
                   color: #000000 !important;
                 }
                 .print-area * {
@@ -1218,10 +1222,13 @@ export default function POSPage() {
                 }
               `}
             </style>
-            <div className="print-area w-full bg-white p-6 rounded-2xl font-sans text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none relative overflow-hidden">
+            <div 
+              style={{ fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif' }}
+              className="print-area w-full bg-white p-6 rounded-2xl text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none relative overflow-hidden"
+            >
               {/* Store Header */}
               <div className="text-center pb-3 mb-3 border-b border-black/25">
-                <h3 className="text-[17px] font-bold text-black tracking-widest uppercase leading-tight font-sans">
+                <h3 className="text-[16px] font-bold text-black tracking-widest uppercase leading-tight">
                   {posContext.outletName}
                 </h3>
                 <p className="text-[11px] font-normal text-black mt-0.5">
@@ -1240,10 +1247,10 @@ export default function POSPage() {
                 {cartItems.map(item => (
                   <div key={item.id} className="flex justify-between items-start text-black">
                     <div className="pr-2 leading-tight">
-                      <p className="text-[12px] font-medium text-black">{item.name}</p>
-                      <p className="text-[11px] font-normal text-black mt-0.5">{item.qty} × Tk {item.price}</p>
+                      <p className="text-[11.5px] font-normal text-black">{item.name}</p>
+                      <p className="text-[10.5px] font-normal text-black mt-0.5">{item.qty} × Tk {item.price}</p>
                     </div>
-                    <span className="text-[12px] font-medium text-black shrink-0">
+                    <span className="text-[11.5px] font-normal text-black shrink-0">
                       Tk {item.price * item.qty}
                     </span>
                   </div>
@@ -1269,28 +1276,28 @@ export default function POSPage() {
                   </div>
                 )}
                 
-                <div className="flex justify-between items-center text-[13px] font-bold text-black pt-2 mt-1 border-t border-black/30">
+                <div className="flex justify-between items-center text-[11.5px] font-medium text-black pt-2 mt-1 border-t border-black/30">
                   <span className="tracking-wide">TOTAL</span>
-                  <span className="text-[14px] font-bold">Tk {total}</span>
+                  <span className="text-[12px] font-medium">Tk {total}</span>
                 </div>
               </div>
 
               {/* Payment Method & Barcode */}
               <div className="text-center pt-2 border-t border-black/20">
-                <p className="text-[11px] font-medium text-black uppercase tracking-wider mb-2">
+                <p className="text-[10.5px] font-normal text-black uppercase tracking-wider mb-2">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   {completedInvoiceId && (
-                    <div className="flex justify-center my-2.5 w-full overflow-hidden">
+                    <div className="flex justify-center my-2 w-full overflow-hidden">
                       <div className="scale-100 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
-                          width={1.3} 
-                          height={30} 
+                          width={1.25} 
+                          height={28} 
                           displayValue={true} 
-                          fontSize={10} 
+                          fontSize={9.5} 
                           margin={2} 
                           background="transparent"
                           lineColor="#000000"
@@ -1299,8 +1306,8 @@ export default function POSPage() {
                     </div>
                   )}
                   
-                  <p className="text-[11px] font-normal text-black mt-1.5">Thank you for shopping at Rimal!</p>
-                  <p className="text-[10px] font-normal text-black mt-0.5">Please preserve this receipt for exchange</p>
+                  <p className="text-[10.5px] font-normal text-black mt-1.5">Thank you for shopping at Rimal!</p>
+                  <p className="text-[9.5px] font-normal text-black mt-0.5">Please preserve this receipt for exchange</p>
                 </div>
               </div>
             </div>
