@@ -466,7 +466,7 @@ export default function EditProductPage({ params }: { params: any }) {
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-[#33040D]" />
-                      Size Attribute (সাইজ অ্যাট্রিবিউট)
+                      Size Attribute
                     </label>
                     <span className="text-xs font-semibold text-[#33040D] bg-[#33040D]/10 px-2.5 py-1 rounded-full">
                       Selected: <strong>{simpleSize || 'Free Size'}</strong>
@@ -519,7 +519,7 @@ export default function EditProductPage({ params }: { params: any }) {
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
                       <Palette className="w-4 h-4 text-[#33040D]" />
-                      Color Attribute (কালার)
+                      Color Attribute
                     </label>
                     <div className="flex items-center gap-2">
                       {simpleColor && (
@@ -608,7 +608,7 @@ export default function EditProductPage({ params }: { params: any }) {
                 {/* 3. Single Pricing, SKU & Stock (1 SKU, 1 Regular Price, 1 Cost Price) */}
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Pricing, Stock & SKU (একক তথ্য)
+                    Pricing, Stock & SKU (Single Details)
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -655,7 +655,7 @@ export default function EditProductPage({ params }: { params: any }) {
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-black text-[#33040D] bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
                         placeholder="0.00"
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">১টি বিক্রয়মূল্য</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Single Selling Price</p>
                     </div>
 
                     <div>
@@ -670,7 +670,7 @@ export default function EditProductPage({ params }: { params: any }) {
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
                         placeholder="0.00"
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">১টি ক্রয়মূল্য</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Single Cost Price</p>
                     </div>
                   </div>
                 </div>

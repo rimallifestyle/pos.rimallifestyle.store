@@ -407,7 +407,7 @@ export default function BarcodeCenterPage() {
                 {/* Top Offset / Vertical Nudge */}
                 <div className="flex flex-col gap-1.5 w-full sm:w-auto">
                   <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-                    Top Offset (টপ থেকে নিচে):
+                    Top Offset (Nudge Down):
                   </span>
                   <div className="flex items-center bg-gray-100 p-1 rounded-xl gap-1">
                     <button
@@ -415,7 +415,7 @@ export default function BarcodeCenterPage() {
                       onClick={() => handleTopOffsetChange(topOffset - 1)}
                       disabled={topOffset <= 0}
                       className="w-7 h-7 rounded-lg bg-white disabled:opacity-40 flex items-center justify-center font-bold text-gray-700 shadow-sm hover:text-[#33040D] cursor-pointer"
-                      title="উপরে নাও (-1mm)"
+                      title="Move Up (-1mm)"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
@@ -427,7 +427,7 @@ export default function BarcodeCenterPage() {
                       onClick={() => handleTopOffsetChange(topOffset + 1)}
                       disabled={topOffset >= 15}
                       className="w-7 h-7 rounded-lg bg-white disabled:opacity-40 flex items-center justify-center font-bold text-gray-700 shadow-sm hover:text-[#33040D] cursor-pointer"
-                      title="নিচে নাও (+1mm)"
+                      title="Move Down (+1mm)"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -447,7 +447,7 @@ export default function BarcodeCenterPage() {
               <div className="flex items-center gap-2 p-2.5 bg-green-50/80 border border-green-200/60 rounded-xl text-xs text-green-900 font-medium">
                 <span className="font-bold text-green-700">✓ Portrait Ready:</span>
                 <span>
-                  প্রিন্ট উইন্ডো স্বয়ংক্রিয়ভাবে <strong>Portrait</strong> মোডে ওপেন হবে (কোনো Landscape সিলেক্ট হবে না)।
+                  Print window opens in <strong>Portrait</strong> mode automatically (no Landscape selection required).
                 </span>
               </div>
             </div>

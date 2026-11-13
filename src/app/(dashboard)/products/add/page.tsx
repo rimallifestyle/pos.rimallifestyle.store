@@ -384,7 +384,7 @@ export default function AddProductPage() {
               <div>
                 <h2 className="text-[18px] font-bold text-gray-900">Product Configuration</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Choose Single Product (১টি প্রাইস, SKU ও স্টক) or Variable Product (আলাদা আলাদা ভ্যারিয়েন্ট ও প্রাইস).
+                  Choose Single Product (1 Price, SKU & Stock) or Variable Product (Multiple Variants & Prices).
                 </p>
               </div>
 
@@ -399,7 +399,7 @@ export default function AddProductPage() {
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <Tag className="w-3.5 h-3.5" /> Single Product (১টি প্রাইস, সাইজ ও কালার)
+                  <Tag className="w-3.5 h-3.5" /> Single Product (1 Price, Size & Color)
                 </button>
                 <button
                   type="button"
@@ -410,7 +410,7 @@ export default function AddProductPage() {
                       : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <Layers className="w-3.5 h-3.5" /> Variable Product (মাল্টি-ভ্যারিয়েন্ট)
+                  <Layers className="w-3.5 h-3.5" /> Variable Product (Multi-Variant)
                 </button>
               </div>
             </div>
@@ -423,7 +423,7 @@ export default function AddProductPage() {
                 <div className="flex items-center gap-2.5 p-3.5 bg-[#33040D]/5 border border-[#33040D]/15 rounded-2xl text-xs font-medium text-[#33040D]">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-[#33040D]" />
                   <span>
-                    <strong>Single Product:</strong> ১টি SKU (Barcode), ১টি রেগুলার বিক্রয়মূল্য এবং ১টি ক্রয়মূল্য থাকবে। সাইজ ও কালার নির্বাচন করলেও কোনো আলাদা বা ভিন্ন ভিন্ন প্রাইস হবে না।
+                    <strong>Single Product:</strong> Features 1 SKU (Barcode), 1 regular selling price, and 1 cost price. Selected size and color will not alter the price.
                   </span>
                 </div>
 
@@ -432,7 +432,7 @@ export default function AddProductPage() {
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-[#33040D]" />
-                      Size Attribute (সাইজ)
+                      Size Attribute
                     </label>
                     <span className="text-xs font-semibold text-[#33040D] bg-[#33040D]/10 px-2.5 py-1 rounded-full">
                       Selected: <strong>{simpleSize || 'Free Size'}</strong>
@@ -485,7 +485,7 @@ export default function AddProductPage() {
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-bold text-gray-800 flex items-center gap-2">
                       <Palette className="w-4 h-4 text-[#33040D]" />
-                      Color Attribute (কালার)
+                      Color Attribute
                     </label>
                     <div className="flex items-center gap-2">
                       {simpleColor && (
@@ -574,7 +574,7 @@ export default function AddProductPage() {
                 {/* 3. Single Pricing, SKU & Stock (1 SKU, 1 Regular Price, 1 Cost Price) */}
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Pricing, Stock & SKU (একক তথ্য)
+                    Pricing, Stock & SKU (Single Details)
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -621,7 +621,7 @@ export default function AddProductPage() {
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-black text-[#33040D] bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
                         placeholder="0.00"
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">১টি বিক্রয়মূল্য</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Single Selling Price</p>
                     </div>
 
                     <div>
@@ -636,7 +636,7 @@ export default function AddProductPage() {
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-[#33040D]/20 outline-none" 
                         placeholder="0.00"
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">১টি ক্রয়মূল্য</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Single Cost Price</p>
                     </div>
                   </div>
                 </div>
