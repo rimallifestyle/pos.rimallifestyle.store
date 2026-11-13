@@ -1220,30 +1220,30 @@ export default function POSPage() {
             </style>
             <div className="print-area w-full bg-white p-6 rounded-2xl font-sans text-black border border-gray-100 shadow-sm mb-6 print:mb-0 print:border-none print:shadow-none relative overflow-hidden">
               {/* Store Header */}
-              <div className="text-center mb-5">
-                <h3 className="text-[20px] font-bold text-black tracking-widest uppercase leading-none font-sans">
+              <div className="text-center pb-3 mb-3 border-b border-black/25">
+                <h3 className="text-[17px] font-bold text-black tracking-widest uppercase leading-tight font-sans">
                   {posContext.outletName}
                 </h3>
-                <p className="text-[12px] font-semibold text-black mt-1">
+                <p className="text-[11px] font-normal text-black mt-0.5">
                   {posContext.outletLocation}
                 </p>
                 
-                <div className="text-[11px] font-medium text-black mt-2 space-y-0.5">
+                <div className="text-[10px] font-normal text-black mt-2 space-y-0.5 leading-normal">
                   <p>{new Date().toLocaleDateString('en-GB')} &nbsp;•&nbsp; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <p>Invoice: {completedInvoiceId} &nbsp;•&nbsp; Cashier: {posContext.cashierName}</p>
+                  <p>Inv: {completedInvoiceId} &nbsp;•&nbsp; Cashier: {posContext.cashierName}</p>
                   {customerPhone && <p>Customer: {customerPhone}</p>}
                 </div>
               </div>
 
               {/* Items Section */}
-              <div className="space-y-2.5 mb-4">
+              <div className="space-y-2 py-1 mb-3">
                 {cartItems.map(item => (
                   <div key={item.id} className="flex justify-between items-start text-black">
                     <div className="pr-2 leading-tight">
-                      <p className="text-[13px] font-semibold text-black">{item.name}</p>
-                      <p className="text-[11px] font-medium text-black mt-0.5">{item.qty} × Tk {item.price}</p>
+                      <p className="text-[12px] font-medium text-black">{item.name}</p>
+                      <p className="text-[11px] font-normal text-black mt-0.5">{item.qty} × Tk {item.price}</p>
                     </div>
-                    <span className="text-[13px] font-bold text-black shrink-0">
+                    <span className="text-[12px] font-medium text-black shrink-0">
                       Tk {item.price * item.qty}
                     </span>
                   </div>
@@ -1251,7 +1251,7 @@ export default function POSPage() {
               </div>
 
               {/* Totals Section */}
-              <div className="space-y-1.5 py-2 mb-4 text-[12px] font-semibold text-black">
+              <div className="space-y-1.5 py-2 mb-3 border-t border-black/25 text-[11px] font-normal text-black">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>Tk {subtotal}</span>
@@ -1269,28 +1269,28 @@ export default function POSPage() {
                   </div>
                 )}
                 
-                <div className="flex justify-between items-baseline text-[17px] font-bold text-black pt-2 mt-1">
-                  <span className="tracking-wider">TOTAL</span>
-                  <span className="text-[18px]">Tk {total}</span>
+                <div className="flex justify-between items-center text-[13px] font-bold text-black pt-2 mt-1 border-t border-black/30">
+                  <span className="tracking-wide">TOTAL</span>
+                  <span className="text-[14px] font-bold">Tk {total}</span>
                 </div>
               </div>
 
               {/* Payment Method & Barcode */}
-              <div className="text-center pt-1">
-                <p className="text-[12px] font-bold text-black uppercase tracking-wider mb-2">
+              <div className="text-center pt-2 border-t border-black/20">
+                <p className="text-[11px] font-medium text-black uppercase tracking-wider mb-2">
                   PAID VIA: {paymentType === 'Cash' ? 'CASH' : paymentType === 'MFS' ? paymentProvider.toUpperCase() : `CARD (${paymentProvider})`}
                 </p>
                 
                 <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   {completedInvoiceId && (
-                    <div className="flex justify-center my-3 w-full overflow-hidden">
+                    <div className="flex justify-center my-2.5 w-full overflow-hidden">
                       <div className="scale-100 origin-center">
                         <Barcode 
                           value={completedInvoiceId} 
-                          width={1.4} 
-                          height={36} 
+                          width={1.3} 
+                          height={30} 
                           displayValue={true} 
-                          fontSize={11} 
+                          fontSize={10} 
                           margin={2} 
                           background="transparent"
                           lineColor="#000000"
@@ -1299,8 +1299,8 @@ export default function POSPage() {
                     </div>
                   )}
                   
-                  <p className="text-[11px] font-bold text-black mt-2">Thank you for shopping at Rimal!</p>
-                  <p className="text-[10px] font-medium text-black mt-0.5">Please preserve this receipt for exchange</p>
+                  <p className="text-[11px] font-normal text-black mt-1.5">Thank you for shopping at Rimal!</p>
+                  <p className="text-[10px] font-normal text-black mt-0.5">Please preserve this receipt for exchange</p>
                 </div>
               </div>
             </div>
