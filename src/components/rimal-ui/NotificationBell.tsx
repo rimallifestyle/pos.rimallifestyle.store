@@ -34,7 +34,17 @@ interface NotificationItem {
   createdAt: string;
 }
 
-export default function NotificationBell() {
+interface NotificationBellProps {
+  align?: 'left' | 'right';
+  className?: string;
+  buttonClassName?: string;
+}
+
+export default function NotificationBell({ 
+  align = 'right', 
+  className = '',
+  buttonClassName
+}: NotificationBellProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -97,17 +107,21 @@ export default function NotificationBell() {
     };
   }, []);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click / tap
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [isOpen]);
 
   const handleToggle = () => {
@@ -173,14 +187,16 @@ export default function NotificationBell() {
     }
   };
 
+  const defaultButtonClass = "relative w-10 h-10 md:w-11 md:h-11 rounded-full bg-white flex items-center justify-center shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all text-gray-500 hover:text-[#33040D] border border-gray-100 hover:border-gray-200 active:scale-95";
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Bell Button */}
       <button
         type="button"
         onClick={handleToggle}
         aria-label="Open notifications"
-        className="relative w-10 h-10 md:w-11 md:h-11 rounded-full bg-white flex items-center justify-center shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all text-gray-500 hover:text-[#33040D] border border-gray-100 hover:border-gray-200 active:scale-95"
+        className={buttonClassName || defaultButtonClass}
       >
         <Bell className="w-[18px] h-[18px] md:w-5 md:h-5 transition-transform" />
 
@@ -194,41 +210,60 @@ export default function NotificationBell() {
 
       {/* Slide-Down Notifications Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-[calc(100vw-32px)] sm:w-[380px] bg-white rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.14)] border border-gray-100 overflow-hidden z-[200] animate-in fade-in slide-in-from-top-3 duration-200">
-          
-          {/* Header */}
-          <div className="p-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[14px] font-extrabold text-gray-900">Notifications</h3>
-              {unreadCount > 0 && (
-                <span className="px-2 py-0.5 bg-[#33040D] text-white text-[10px] font-bold rounded-full">
-                  {unreadCount} new
-                </span>
-              )}
-            </div>
+        <>
+          {/* Mobile Backdrop Overlay for Touch Screens */}
+          <div 
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/25 backdrop-blur-[2px] z-[9990] sm:hidden animate-in fade-in duration-200"
+            aria-hidden="true"
+          />
 
-            <div className="flex items-center gap-1">
-              {unreadCount > 0 && (
+          <div 
+            className={`fixed inset-x-3 top-16 sm:inset-auto ${
+              align === 'left' ? 'sm:left-0 sm:right-auto' : 'sm:right-0 sm:left-auto'
+            } sm:absolute sm:top-full sm:mt-3 sm:w-[380px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-gray-200/90 overflow-hidden z-[9999] animate-in fade-in slide-in-from-top-3 duration-200`}
+          >
+            {/* Header */}
+            <div className="p-4 bg-gray-50/90 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[14px] font-extrabold text-gray-900">Notifications</h3>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 bg-[#33040D] text-white text-[10px] font-bold rounded-full">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    className="px-2.5 py-1 text-[11px] font-bold text-[#33040D] hover:bg-[#33040D]/10 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" /> Mark all read
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-gray-100 transition-colors"
+                    title="Clear all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={handleMarkAllRead}
-                  className="px-2.5 py-1 text-[11px] font-bold text-[#33040D] hover:bg-[#33040D]/10 rounded-lg transition-colors flex items-center gap-1"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors sm:hidden"
+                  title="Close notifications"
                 >
-                  <CheckCheck className="w-3.5 h-3.5" /> Mark all read
+                  <X className="w-4 h-4" />
                 </button>
-              )}
-              {notifications.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="p-1 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Clear all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
+              </div>
             </div>
-          </div>
 
           {/* List of Notifications */}
           <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-50">
@@ -302,6 +337,7 @@ export default function NotificationBell() {
             </Link>
           </div>
         </div>
+        </>
       )}
     </div>
   );

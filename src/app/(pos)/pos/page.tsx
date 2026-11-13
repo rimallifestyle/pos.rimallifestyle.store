@@ -593,7 +593,7 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col min-h-[500px] lg:min-h-0 lg:h-full animate-on-load print:hidden">
         
         {/* POS Header / Search */}
-        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="relative z-30 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
@@ -615,33 +615,36 @@ export default function POSPage() {
           </div>
 
           {/* End of Day / Utilities */}
-          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0">
-            <div className="shrink-0">
-              <NotificationBell />
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar -mx-2 px-2 md:mx-0 md:px-0 flex-1 md:flex-initial">
+              <button 
+                onClick={async () => {
+                  await logoutUser();
+                  router.push('/admin/login');
+                }}
+                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0"
+              >
+                <LogOut className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Logout</span>
+              </button>
+              <button 
+                onClick={() => setShowReturnModal(true)}
+                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center justify-center gap-2 shrink-0"
+              >
+                <Undo className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Return</span>
+              </button>
+              <button 
+                onClick={handleEndOfDayClick}
+                disabled={isGeneratingReport}
+                className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_15px_rgba(51,4,13,0.15)] md:shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] transition-all flex items-center justify-center gap-2 shrink-0"
+              >
+                {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <FileText className="w-4 h-4 shrink-0" />} <span className="whitespace-nowrap">End of Day</span>
+              </button>
             </div>
 
-            <button 
-              onClick={async () => {
-                await logoutUser();
-                router.push('/admin/login');
-              }}
-              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-gray-600 font-bold text-[12px] md:text-[13px] border border-gray-200 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:text-red-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0"
-            >
-              <LogOut className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Logout</span>
-            </button>
-            <button 
-              onClick={() => setShowReturnModal(true)}
-              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-white text-[#d63031] font-bold text-[12px] md:text-[13px] border border-red-100 md:border-transparent md:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:bg-[#d63031]/10 transition-colors flex items-center justify-center gap-2 shrink-0"
-            >
-              <Undo className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap">Return</span>
-            </button>
-            <button 
-              onClick={handleEndOfDayClick}
-              disabled={isGeneratingReport}
-              className="h-[44px] md:h-[56px] px-4 md:px-5 rounded-xl md:rounded-[20px] bg-[#33040D] text-white font-bold text-[12px] md:text-[13px] shadow-[0_4px_15px_rgba(51,4,13,0.15)] md:shadow-[0_4px_20px_rgba(51,4,13,0.15)] hover:bg-[#4a0614] hover:shadow-[0_8px_25px_rgba(51,4,13,0.25)] transition-all flex items-center justify-center gap-2 shrink-0"
-            >
-              {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <FileText className="w-4 h-4 shrink-0" />} <span className="whitespace-nowrap">End of Day</span>
-            </button>
+            {/* Notification Bell (Outside scroll container so dropdown is never clipped or trapped) */}
+            <div className="relative z-50 shrink-0">
+              <NotificationBell align="right" />
+            </div>
           </div>
         </div>
 
